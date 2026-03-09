@@ -345,208 +345,114 @@ function botBilliardMove() {
     if (!cue || cue.pocketed) return;
     
     const botType = gameState.playerTypes[2];
+    let bestVx = 0, bestVy = 0, bestScore = -999999;
     
-    // Ищем лучший прямой удар
-    let bestShot = null;
-    let bestScore = -Infinity;
-    
-    // Получаем целевые шары
-    const targets = gameState.balls.filter(b => {
-        if (b.pocketed || b.type === 'cue') return false;
-        if (b.type === 'eight') {
-            const myBallsLeft = gameState.balls.filter(x => !x.pocketed && x.type === botType).length;
-            return myBallsLeft === 0 && botType;
-        }
-        if (botType) return b.type === botType;
-        return b.type !== 'eight';
-    });
-    
-    // Для каждого шара и каждой лузы считаем удар
-    for (const ball of targets) {
-        for (const pocket of POCKETS) {
-            const shot = calcDirectShot(cue, ball, pocket);
-            if (shot && shot.score > bestScore) {
-                bestScore = shot.score;
-                bestShot = shot;
+    // Перебираем углы
+    for (let deg = 0; deg < 360; deg += 3) {
+        const angle = deg * Math.PI / 180;
+        for (let power = 10; power <= 22; power += 4) {
+            const vx = Math.cos(angle) * power;
+            const vy = Math.sin(angle) * power;
+            
+            const score = simShot(vx, vy, botType);
+            if (score > bestScore) {
+                bestScore = score;
+                bestVx = vx;
+                bestVy = vy;
             }
         }
     }
     
-    // Если не нашли прямой удар - бьём в ближайший шар
-    if (!bestShot) {
-        let closestBall = null;
-        let closestDist = Infinity;
-        
-        for (const ball of targets) {
-            const dist = Math.sqrt((ball.x - cue.x) ** 2 + (ball.y - cue.y) ** 2);
-            if (dist < closestDist) {
-                closestDist = dist;
-                closestBall = ball;
+    // Уточняем лучший удар
+    const baseAngle = Math.atan2(bestVy, bestVx);
+    const basePower = Math.sqrt(bestVx * bestVx + bestVy * bestVy);
+    
+    for (let da = -3; da <= 3; da += 0.5) {
+        for (let dp = -2; dp <= 2; dp += 1) {
+            const angle = baseAngle + da * Math.PI / 180;
+            const power = Math.max(8, Math.min(24, basePower + dp));
+            const vx = Math.cos(angle) * power;
+            const vy = Math.sin(angle) * power;
+            
+            const score = simShot(vx, vy, botType);
+            if (score > bestScore) {
+                bestScore = score;
+                bestVx = vx;
+                bestVy = vy;
             }
-        }
-        
-        if (closestBall) {
-            const dx = closestBall.x - cue.x;
-            const dy = closestBall.y - cue.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            bestShot = {
-                vx: (dx / dist) * 15,
-                vy: (dy / dist) * 15
-            };
         }
     }
     
-    if (bestShot) {
-        performShot(bestShot.vx, bestShot.vy);
-    }
+    performShot(bestVx, bestVy);
 }
 
-function calcDirectShot(cue, ball, pocket) {
-    // Направление от шара к лузе
-    const toPocketX = pocket.x - ball.x;
-    const toPocketY = pocket.y - ball.y;
-    const toPocketDist = Math.sqrt(toPocketX ** 2 + toPocketY ** 2);
+function simShot(vx, vy, botType) {
+    const balls = gameState.balls.map(b => ({
+        x: b.x, y: b.y, vx: 0, vy: 0, 
+        pocketed: b.pocketed, type: b.type, id: b.id
+    }));
     
-    if (toPocketDist < 1) return null;
+    balls[0].vx = vx;
+    balls[0].vy = vy;
     
-    const dirX = toPocketX / toPocketDist;
-    const dirY = toPocketY / toPocketDist;
+    let own = 0, other = 0, cueFoul = false, eightBad = false;
     
-    // Точка куда нужно ударить шар (позади него)
-    const hitX = ball.x - dirX * BALL_R * 2;
-    const hitY = ball.y - dirY * BALL_R * 2;
-    
-    // Проверяем что точка на столе
-    if (hitX < TABLE.x + BALL_R || hitX > TABLE.x + TABLE.w - BALL_R) return null;
-    if (hitY < TABLE.y + BALL_R || hitY > TABLE.y + TABLE.h - BALL_R) return null;
-    
-    // Направление от битка к точке удара
-    const toHitX = hitX - cue.x;
-    const toHitY = hitY - cue.y;
-    const toHitDist = Math.sqrt(toHitX ** 2 + toHitY ** 2);
-    
-    if (toHitDist < BALL_R * 2) return null;
-    
-    const shotDirX = toHitX / toHitDist;
-    const shotDirY = toHitY / toHitDist;
-    
-    // Проверяем препятствия на пути битка
-    for (const other of gameState.balls) {
-        if (other.pocketed || other.id === 0 || other.id === ball.id) continue;
+    for (let step = 0; step < 500; step++) {
+        let moving = false;
         
-        // Проекция на линию удара
-        const toOtherX = other.x - cue.x;
-        const toOtherY = other.y - cue.y;
-        const proj = toOtherX * shotDirX + toOtherY * shotDirY;
-        
-        if (proj < BALL_R || proj > toHitDist - BALL_R) continue;
-        
-        const projX = cue.x + shotDirX * proj;
-        const projY = cue.y + shotDirY * proj;
-        const distToLine = Math.sqrt((projX - other.x) ** 2 + (projY - other.y) ** 2);
-        
-        if (distToLine < BALL_R * 2.2) return null; // Заблокировано
-    }
-    
-    // Проверяем препятствия на пути шара к лузе
-    for (const other of gameState.balls) {
-        if (other.pocketed || other.id === ball.id || other.id === 0) continue;
-        
-        const toOtherX = other.x - ball.x;
-        const toOtherY = other.y - ball.y;
-        const proj = toOtherX * dirX + toOtherY * dirY;
-        
-        if (proj < BALL_R || proj > toPocketDist - BALL_R) continue;
-        
-        const projX = ball.x + dirX * proj;
-        const projY = ball.y + dirY * proj;
-        const distToLine = Math.sqrt((projX - other.x) ** 2 + (projY - other.y) ** 2);
-        
-        if (distToLine < BALL_R * 2.2) return null; // Заблокировано
-    }
-    
-    // Угол между направлением удара и нужным направлением шара
-    const dot = -(shotDirX * dirX + shotDirY * dirY);
-    const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
-    
-    // Слишком большой угол - удар не получится
-    if (angle > Math.PI / 3) return null;
-    
-    // Рассчитываем силу
-    const totalDist = toHitDist + toPocketDist;
-    const power = Math.min(22, Math.max(10, 8 + totalDist * 0.02));
-    
-    // Оценка удара (чем прямее и короче - тем лучше)
-    const angleScore = Math.cos(angle);
-    const distScore = 1 - (toPocketDist / 600);
-    const score = angleScore * 100 + distScore * 50;
-    
-    return {
-        vx: shotDirX * power,
-        vy: shotDirY * power,
-        score: score
-    };
-}
-
-function updateBilliard() {
-    if (!gameStarted || !gameState?.balls || cueBallRestoring) return;
-    
-    for (let step = 0; step < PHYSICS_STEPS; step++) {
-        for (const ball of gameState.balls) { 
-            if (!ball.pocketed && getSpeed(ball) > 0) { 
-                ball.x += ball.vx / PHYSICS_STEPS; 
-                ball.y += ball.vy / PHYSICS_STEPS; 
-            } 
-        }
-        
-        for (let iter = 0; iter < 3; iter++) { 
-            for (let i = 0; i < gameState.balls.length; i++) { 
-                for (let j = i + 1; j < gameState.balls.length; j++) { 
-                    const a = gameState.balls[i], b = gameState.balls[j]; 
-                    if (!a.pocketed && !b.pocketed) resolveBallCollision(a, b); 
-                } 
-            } 
-        }
-        
-        for (const ball of gameState.balls) { 
-            if (!ball.pocketed) { 
-                resolveWallCollision(ball); 
-                checkPockets(ball); 
-            } 
-        }
-    }
-    
-    let anyMoving = false;
-    for (const ball of gameState.balls) {
-        if (ball.pocketed) continue;
-        const speed = getSpeed(ball);
-        if (speed > 0) { 
-            const f = speed > 10 ? 0.9992 : speed > 5 ? 0.9985 : speed > 2 ? 0.997 : speed > 0.5 ? 0.994 : speed > 0.1 ? 0.99 : 0.98; 
-            ball.vx *= f; 
-            ball.vy *= f; 
-            if (getSpeed(ball) < MIN_VELOCITY) { 
-                ball.vx = 0; 
-                ball.vy = 0; 
-            } else {
-                anyMoving = true; 
+        for (const b of balls) {
+            if (b.pocketed) continue;
+            b.x += b.vx;
+            b.y += b.vy;
+            b.vx *= 0.98;
+            b.vy *= 0.98;
+            if (Math.abs(b.vx) > 0.1 || Math.abs(b.vy) > 0.1) moving = true;
+            
+            if (b.x < TABLE.x + BALL_R) { b.x = TABLE.x + BALL_R; b.vx *= -0.7; }
+            if (b.x > TABLE.x + TABLE.w - BALL_R) { b.x = TABLE.x + TABLE.w - BALL_R; b.vx *= -0.7; }
+            if (b.y < TABLE.y + BALL_R) { b.y = TABLE.y + BALL_R; b.vy *= -0.7; }
+            if (b.y > TABLE.y + TABLE.h - BALL_R) { b.y = TABLE.y + TABLE.h - BALL_R; b.vy *= -0.7; }
+            
+            for (const p of POCKETS) {
+                if (Math.sqrt((b.x - p.x) ** 2 + (b.y - p.y) ** 2) < POCKET_R) {
+                    if (!b.pocketed) {
+                        b.pocketed = true;
+                        if (b.type === 'cue') cueFoul = true;
+                        else if (b.type === 'eight') {
+                            const left = balls.filter(x => !x.pocketed && x.type === botType).length;
+                            if (left > 0 || !botType) eightBad = true;
+                        }
+                        else if (b.type === botType || !botType) own++;
+                        else other++;
+                    }
+                }
             }
         }
-    }
-    
-    const wasMoving = gameState.isMoving; 
-    gameState.isMoving = anyMoving;
-    
-    if (wasMoving && !anyMoving) {
-        // Проверяем что белый шар на месте перед завершением хода
-        const cue = gameState.balls[0];
-        if (cue && cue.pocketed && !cueBallRestoring) {
-            // Ждем восстановления
-            return;
+        
+        for (let i = 0; i < balls.length; i++) {
+            for (let j = i + 1; j < balls.length; j++) {
+                const a = balls[i], b = balls[j];
+                if (a.pocketed || b.pocketed) continue;
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d < BALL_R * 2 && d > 0) {
+                    const nx = dx / d, ny = dy / d;
+                    const dv = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+                    if (dv > 0) {
+                        a.vx -= dv * nx; a.vy -= dv * ny;
+                        b.vx += dv * nx; b.vy += dv * ny;
+                    }
+                }
+            }
         }
-        endTurn();
+        
+        if (!moving) break;
     }
     
-    updateBilliardInfo();
+    let score = own * 1000 - other * 500;
+    if (cueFoul) score -= 2000;
+    if (eightBad) score -= 10000;
+    return score;
 }
 
 function updateBilliardInfo() {
