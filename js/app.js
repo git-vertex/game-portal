@@ -305,7 +305,7 @@ function joinLobby() {
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
 
-            lobplayersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };byRef.child('players').set(playersInfo);
+            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };byRef.child('players').set(playersInfo);
             document.querySelector('[data-tab="create"]').click();
             showLobbyUI();
             document.getElementById('lobbyCode').textContent = lobbyCode;
