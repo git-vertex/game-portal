@@ -160,6 +160,11 @@ async function saveProfile() {
 }
 
 function logout() { 
+    // Удаляем аккаунт из Firebase полностью
+    if (db && firebaseReady && currentNickname) {
+        db.ref('users/' + currentNickname.toLowerCase()).remove();
+    }
+    
     isLoggedIn = false; 
     currentNickname = ''; 
     currentAvatar = ''; 
@@ -193,7 +198,7 @@ function createLobby() {
     isHost = true; myPlayer = 1;
     document.getElementById('startGameBtn').style.display = '';
     document.getElementById('startGameBtn').disabled = true;
-    playersInfo = { 1: { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 1000 } };
+    playersInfo = { 1: { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 } };
     lobbyRef = db.ref('lobbies/' + lobbyCode);
     if (currentGame === 'billiard') {
         initGameState();
@@ -215,9 +220,9 @@ function createLobby() {
 function playWithBot() {
     resetState();
     myNickname = getNickname(); isBotMode = true; isHost = true; myPlayer = 1; maxPlayers = 2;
-    playersInfo = { 
-        1: { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 1000 },
-        2: { nick: 'Бот', sessionId: 'bot', avatar: '', frp: 1000 }
+    playersInfo = {
+        1: { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 },
+        2: { nick: 'Бот', sessionId: 'bot', avatar: '', frp: 0 }
     };
     if (currentGame === 'billiard') {
         initGameState();
@@ -271,8 +276,8 @@ function joinLobby() {
             }
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
-            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 1000 };
-            lobbyRef.child('players').set(playersInfo);
+
+            lobplayersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };byRef.child('players').set(playersInfo);
             document.querySelector('[data-tab="create"]').click();
             showLobbyUI();
             document.getElementById('lobbyCode').textContent = lobbyCode;

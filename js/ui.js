@@ -114,7 +114,7 @@ function updatePlayersList() {
         if (isMe) badges += '<span class="badge badge-you">ВЫ</span>';
         
         const isCurrentUser = info.sessionId === mySessionId;
-        const rating = isCurrentUser ? (playerStats[currentGame]?.frp || 1000) : (info.frp || 1000);
+        const rating = isCurrentUser ? (playerStats[currentGame]?.frp || 0) : (info.frp || 0);
         
         row.innerHTML = `
             <td>
@@ -460,7 +460,7 @@ async function loadLeaderboard() {
         
         leaderboardData = [];
         for (const [key, user] of Object.entries(users)) {
-            const totalRating = Math.round(((user.stats?.billiard?.frp || 1000) + (user.stats?.pong?.frp || 1000)) / 2);
+            const totalRating = user.stats?.billiard?.frp || 0;
             leaderboardData.push({
                 nickname: user.nickname,
                 avatar: user.avatar || '',
@@ -529,7 +529,7 @@ function getCountryFlag(countryCode) {
 function recordMatch(game, won, pocketedCount = 0) {
     if (isBotMode) return;
     if (!isLoggedIn) return;
-    if (!playerStats[game]) playerStats[game] = { games: 0, wins: 0, frp: 1000 };
+    if (!playerStats[game]) playerStats[game] = { games: 0, wins: 0, frp: 0 };
     
     playerStats[game].games++;
     if (won) playerStats[game].wins++;
