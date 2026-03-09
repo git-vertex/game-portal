@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игровой портал</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="show">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Подключение...</div>
+    </div>
+
+    <!-- Connection Status -->
+    <div id="connectionStatus">
+        <span class="dot"></span>
+        <span id="connectionText">Онлайн</span>
+    </div>
+
+    <!-- ========== LEFT PANEL ========== -->
+    <div id="leftPanel">
+        <div id="collapseSection">
+            <button id="collapseBtn" onclick="toggleLeftPanel()">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="stroke: currentColor; fill: none; stroke-width: 2;">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <div id="gamesSection">
+            <div id="gamesHeader">Игры</div>
+            <button class="gameBtn active" id="billiardBtn" onclick="switchGame('billiard')">
+                <span class="icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="4"></circle>
+                    </svg>
+                </span>
+                <span class="label">Бильярд</span>
+            </button>
+            <button class="gameBtn" id="pongBtn" onclick="switchGame('pong')">
+                <span class="icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <ellipse cx="8" cy="12" rx="6" ry="8" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <line x1="8" y1="20" x2="8" y2="24" stroke="currentColor" stroke-width="3"/>
+                        <circle cx="18" cy="12" r="3" fill="currentColor"/>
+                    </svg>
+                </span>
+                <span class="label">Наст. теннис</span>
+            </button>
+        </div>
+
+        <div class="panel-spacer"></div>
+
+        <div id="accountSection">
+            <div id="accountClickArea" onclick="openAuthModal()">
+                <div id="avatarBtn">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div id="accountInfo">
+                    <div id="displayNick">Гость</div>
+                    <div id="accountStatus">Войти</div>
+                </div>
+            </div>
+            <button id="statsBtn" class="sm" onclick="openStatsModal()">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span class="label">Статистика</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== MAIN AREA ========== -->
+    <div id="mainArea">
+        <!-- Game Controls (Exit Button) -->
+        <div id="gameControls">
+            <button id="leaveGameBtn" class="danger sm" onclick="leaveLobby()">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="width:14px;height:14px;">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Выйти
+            </button>
+        </div>
+
+        <!-- Menu Panel -->
+        <div id="menuPanel">
+            <div id="menuHeader">
+                <h1 id="gameTitle">БИЛЬЯРД</h1>
+                <p id="gameSubtitle">Многопользовательская онлайн игра</p>
+            </div>
+            
+            <div id="menuTabs">
+                <button class="menuTab active" data-tab="browse">Серверы</button>
+                <button class="menuTab" data-tab="create">Создать</button>
+                <button class="menuTab" data-tab="join">По коду</button>
+            </div>
+
+            <!-- Tab: Browse Servers -->
+            <div class="menuContent active" id="tabBrowse">
+                <div class="menu-section">
+                    <div class="servers-header">
+                        <div class="menu-section-header" style="margin-bottom: 0;">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            Доступные серверы
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="servers-count" id="serversCount">0 серверов</span>
+                            <span class="refreshDot"></span>
+                            <button id="refreshServers" class="sm icon-only">
+                                <svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                    <path d="M23 4v6h-6"></path>
+                                    <path d="M1 20v-6h6"></path>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="serverList">
+                        <div class="noServers">Загрузка...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Create Game -->
+            <div class="menuContent" id="tabCreate">
+                <div id="createSection" class="menu-section">
+                    <div class="menu-section-header">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                        Создать игру
+                    </div>
+                    
+                    <div class="create-options">
+                        <div class="create-row">
+                            <select id="playerCount">
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                            </select>
+                            <button id="createLobbyBtn" class="primary">Создать лобби</button>
+                        </div>
+                        
+                        <label class="checkbox" id="privateCheckbox">
+                            <input type="checkbox" id="privateLobby">
+                            <span>Приватное лобби (не видно в списке)</span>
+                        </label>
+                        
+                        <div class="or-divider">или</div>
+                        
+                        <button id="playWithBotBtn" class="full">
+                            <svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px;"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="3"></circle></svg>
+                            Играть с ботом
+                            <span style="color: var(--text-muted); opacity: 0.5; margin-left: 8px;">+0 FRP</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lobby Info (shown after creating) -->
+                <div id="lobbyInfo">
+                    <div class="lobby-code-display">
+                        <div class="lobby-code-label">Код лобби</div>
+                        <div class="lobby-code-value">
+                            <span id="lobbyCode"></span>
+                            <button id="copyBtn" class="sm icon-only" title="Копировать">
+                                <svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="status">Ожидание...</div>
+                    <div id="playersList"></div>
+                    
+                    <div class="lobbyActions">
+                        <button id="startGameBtn" class="primary" disabled>Начать игру</button>
+                        <button id="leaveLobbyBtn" class="danger icon-only" title="Покинуть">
+                            <svg class="icon-svg" viewBox="0 0 24 24" style="width:18px;height:18px;">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+                
+            <!-- Tab: Join by Code -->
+            <div class="menuContent" id="tabJoin">
+                <div class="menu-section">
+                    <div class="menu-section-header">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                        Присоединиться по коду
+                    </div>
+                    
+                    <div class="join-section">
+                        <div class="code-input-wrapper">
+                            <input type="text" id="joinCode" placeholder="XXXXXX" maxlength="6">
+                        </div>
+                        <button id="joinLobbyBtn" class="primary full">Подключиться</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== BILLIARD GAME AREA ========== -->
+        <div id="gameArea">
+            <div id="gameContent">
+                <div id="scorePanel"></div>
+                <div id="gameInfo">
+                    <span id="spectatorBadge">Наблюдатель</span>
+                    <span id="turnTimer">20</span>
+                    <span id="info">ИГРОК 1</span>
+                    <span id="foulMessage"></span>
+                </div>
+                <canvas id="canvas" width="1000" height="500"></canvas>
+                <div id="controlsPanel">
+                    <div class="controlGroup">
+                        <span class="controlLabel">Сила</span>
+                        <div id="power"><div id="powerFill"></div></div>
+                    </div>
+                    <div class="controlGroup">
+                        <span class="controlLabel">Точность</span>
+                        <input type="range" id="precisionSlider" min="0.001" max="1" step="0.001" value="0.6">
+                        <span class="controlValue" id="precisionValue">0.600°</span>
+                    </div>
+                    <div class="controlGroup">
+                        <span class="controlLabel">Угол</span>
+                        <span class="controlValue" id="angleValue">0.00°</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== PONG GAME AREA ========== -->
+        <div id="pongGameArea">
+            <div id="pongGameContent">
+                <div id="pongScorePanel">
+                    <div class="pongPlayerPanel" id="pongPlayer2Panel">
+                        <span class="pongPlayerName" id="pongPlayer2Name">Игрок 2</span>
+                        <span class="pongScore" id="pongScore2" style="color: #3b82f6;">0</span>
+                    </div>
+                    <div class="pongPlayerPanel" id="pongPlayer1Panel">
+                        <span class="pongScore" id="pongScore1" style="color: #22c55e;">0</span>
+                        <span class="pongPlayerName" id="pongPlayer1Name">Игрок 1</span>
+                    </div>
+                </div>
+                <div id="pongInfo">
+                    <span id="pongSpectatorBadge">Наблюдатель</span>
+                    <span id="pongStatus">ГОТОВ</span>
+                </div>
+                <canvas id="pongCanvas" width="500" height="700"></canvas>
+                <div class="pong-controls-hint">Управление: A/D или стрелки влево/вправо. Двигай ракетку для топспина!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TOGGLE CHAT BUTTON ========== -->
+    <button id="toggleChatBtn">
+        <svg class="icon-svg" viewBox="0 0 24 24">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+    </button>
+
+    <!-- ========== CHAT PANEL ========== -->
+    <div id="chatPanel">
+        <div id="chatHeader">
+            <span>Чат</span>
+            <span id="viewersCount"></span>
+        </div>
+        <div id="chatMessages"></div>
+        <div id="chatInputContainer">
+            <input type="text" id="chatInput" placeholder="Войдите чтобы писать..." maxlength="150">
+            <button id="chatSendBtn" class="sm icon-only">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== AUTH MODAL ========== -->
+    <div id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="authTitle">Вход</span>
+            </div>
+
+            <div class="modal-tabs" id="authTabs">
+                <button class="modal-tab active" data-auth="login">Вход</button>
+                <button class="modal-tab" data-auth="register">Регистрация</button>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="inputGroup">
+                    <label>Никнейм</label>
+                    <input type="text" id="loginNick" placeholder="Ваш никнейм" maxlength="15">
+                </div>
+
+                <div class="inputGroup" style="margin-top: 16px;">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Пароль">
+                </div>
+
+                <div class="auth-error" id="loginError"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                    <button class="primary full" onclick="login()">Войти</button>
+                    <button class="full" onclick="closeAuthModal()">Отмена</button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" style="display: none;">
+                <div class="inputGroup">
+                    <label>Никнейм</label>
+                    <input type="text" id="regNick" placeholder="Придумайте никнейм" maxlength="15">
+                </div>
+
+                <div class="inputGroup" style="margin-top: 16px;">
+                    <label>Пароль</label>
+                    <input type="password" id="regPassword" placeholder="Придумайте пароль">
+                </div>
+
+                <div class="inputGroup" style="margin-top: 16px;">
+                    <label>Повторите пароль</label>
+                    <input type="password" id="regPasswordRepeat" placeholder="Повторите пароль">
+                </div>
+
+                <div class="inputGroup" style="margin-top: 16px;">
+                    <label>Аватар (необязательно)</label>
+                    <div class="avatar-upload">
+                        <div class="avatar-upload-row">
+                            <div class="avatar-preview" id="regAvatarPreview">
+                                <svg class="icon-svg" viewBox="0 0 24 24">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <label class="avatar-upload-btn">
+                                <svg class="icon-svg" viewBox="0 0 24 24" style="width:18px;height:18px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span id="uploadText">Загрузить</span>
+                                <input type="file" id="avatarUpload" accept="image/*">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-error" id="regError"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                    <button class="primary full" onclick="register()">Зарегистрироваться</button>
+                    <button class="full" onclick="closeAuthModal()">Отмена</button>
+                </div>
+            </div>
+
+            <!-- Profile Form -->
+            <div id="profileForm" style="display: none;">
+                <div class="inputGroup">
+                    <label>Никнейм</label>
+                    <input type="text" id="profileNick" disabled>
+                </div>
+
+                <div class="inputGroup" style="margin-top: 16px;">
+                    <label>Аватар</label>
+                    <div class="avatar-upload">
+                        <div class="avatar-upload-row">
+                            <div class="avatar-preview" id="profileAvatarPreview">
+                                <svg class="icon-svg" viewBox="0 0 24 24">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <label class="avatar-upload-btn">
+                                <svg class="icon-svg" viewBox="0 0 24 24" style="width:18px;height:18px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span id="profileUploadText">Загрузить</span>
+                                <input type="file" id="profileAvatarUpload" accept="image/*">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-success" id="profileSuccess"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                    <button class="primary full" onclick="saveProfile()">Сохранить</button>
+                    <button class="danger full" onclick="logout()">Выйти</button>
+                </div>
+                <button class="full" style="margin-top: 10px;" onclick="closeAuthModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== STATS MODAL ========== -->
+    <div id="statsModal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <span>Статистика</span>
+                <button class="sm icon-only" onclick="closeStatsModal()">
+                    <svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="stats-tabs">
+                <button class="stats-tab active" data-stats="overview">Обзор</button>
+                <button class="stats-tab" data-stats="games">По играм</button>
+                <button class="stats-tab" data-stats="history">История</button>
+                <button class="stats-tab" data-stats="leaderboard">Лидеры</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="stats-content active" id="statsOverview">
+                <div class="stats-overview">
+                    <div class="stats-chart-container">
+                        <div class="stats-chart">
+                            <svg width="140" height="140" viewBox="0 0 140 140">
+                                <circle class="stats-chart-bg" cx="70" cy="70" r="54"></circle>
+                                <circle class="stats-chart-fill" id="statsChartFill" cx="70" cy="70" r="54"></circle>
+                            </svg>
+                            <div class="stats-chart-center">
+                                <div class="stats-chart-value" id="statsWinrateValue">0%</div>
+                                <div class="stats-chart-label">Винрейт</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-details">
+                        <div class="stats-row">
+                            <span class="stats-row-label">Всего игр</span>
+                            <span class="stats-row-value" id="statsTotalGames">0</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-row-label">Победы</span>
+                            <span class="stats-row-value green" id="statsTotalWins">0</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-row-label">Поражения</span>
+                            <span class="stats-row-value red" id="statsTotalLosses">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="rating-display">
+                    <div class="rating-icon">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
+                    <div class="rating-info">
+                        <div class="rating-label">Общий рейтинг</div>
+                        <div class="rating-value" id="statsRatingValue">1000</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games Tab -->
+            <div class="stats-content" id="statsGames">
+                <div class="stats-game-grid">
+                    <div class="stats-game-card">
+                        <h3><svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle></svg> Бильярд</h3>
+                        <div class="mini-stats">
+                            <div class="mini-stat">
+                                <div class="mini-stat-value" id="billiardGames">0</div>
+                                <div class="mini-stat-label">Игр</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-value" id="billiardWins">0</div>
+                                <div class="mini-stat-label">Побед</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-value" id="billiardRating">1000</div>
+                                <div class="mini-stat-label">Рейтинг</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-game-card">
+                        <h3><svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="3" height="12" rx="1"></rect><rect x="19" y="6" width="3" height="12" rx="1"></rect><circle cx="12" cy="12" r="2"></circle></svg> Пинг-понг</h3>
+                        <div class="mini-stats">
+                            <div class="mini-stat">
+                                <div class="mini-stat-value" id="pongGames">0</div>
+                                <div class="mini-stat-label">Игр</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-value" id="pongWins">0</div>
+                                <div class="mini-stat-label">Побед</div>
+                            </div>
+                            <div class="mini-stat">
+                                <div class="mini-stat-value" id="pongRating">1000</div>
+                                <div class="mini-stat-label">Рейтинг</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="stats-content" id="statsHistory">
+                <div class="history-controls">
+                    <button class="sort-btn active" data-sort="recent" onclick="setHistorySort('recent')">Последние</button>
+                    <button class="sort-btn" data-sort="wins" onclick="setHistorySort('wins')">Победы</button>
+                    <button class="sort-btn" data-sort="losses" onclick="setHistorySort('losses')">Поражения</button>
+                </div>
+                <div class="match-history" id="matchHistory">
+                    <div class="noServers">Нет истории матчей</div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Tab -->
+            <div class="stats-content" id="statsLeaderboard">
+                <div class="leaderboard-list" id="leaderboardList">
+                    <div class="noServers">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/firebase-service.js"></script>
+    <script src="js/game-billiard.js"></script>
+    <script src="js/game-pong.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
