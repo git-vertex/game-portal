@@ -159,10 +159,15 @@ async function saveProfile() {
     }
 }
 
-function logout() { 
-    // Удаляем аккаунт из Firebase полностью
+async function logout() { 
+    // Удаляем ВСЁ из Firebase
     if (db && firebaseReady && currentNickname) {
-        db.ref('users/' + currentNickname.toLowerCase()).remove();
+        const username = currentNickname.toLowerCase();
+        // Удаляем пользователя
+        await db.ref('users/' + username).remove();
+        // Удаляем из лидерборда если там есть
+        const snapshot = await db.ref('users').once('value');
+        // Пользователь уже удалён, лидерборд обновится автоматически
     }
     
     isLoggedIn = false; 
@@ -173,6 +178,9 @@ function logout() {
     localStorage.removeItem('playerStats');
     updateAccountDisplay(); 
     closeAuthModal(); 
+    
+    // Перезагружаем лидерборд
+    loadLeaderboard();
 }
 
 function resetState() {
@@ -534,6 +542,25 @@ handleAvatarUpload('avatarUpload', 'uploadText', 'regAvatarPreview');
 handleAvatarUpload('profileAvatarUpload', 'profileUploadText', 'profileAvatarPreview');
 loadAccount();
 initFirebase();
+
+// Функция для очистки всех пользователей с 1000 FRP
+async function cleanOldUsers() {
+    if (!db || !firebaseReady) return;
+    const snapshot = await db.ref('users').once('value');
+    const users = snapshot.val() || {};
+    for (const [key, user] of Object.entries(users)) {
+        // Удаляем всех у кого FRP = 1000 или нет статистики
+        if (!user.stats || user.stats.billiard?.frp === 1000 || user.stats.billiard?.frp === undefined) {
+            await db.ref('users/' + key).remove();
+            console.log('Удалён:', key);
+        }
+    }
+    console.log('Очистка завершена');
+    loadLeaderboard();
+}
+
+// Раскомментируй эту строку ОДИН РАЗ чтобы очистить базу:
+// setTimeout(cleanOldUsers, 3000);
 setTimeout(() => { hideLoading(); }, 5000);
 
 // Game Loop
