@@ -43,16 +43,6 @@
                 </span>
                 <span class="label">Бильярд</span>
             </button>
-            <button class="gameBtn" id="pongBtn" onclick="switchGame('pong')">
-                <span class="icon">
-                    <svg class="icon-svg" viewBox="0 0 24 24">
-                        <ellipse cx="8" cy="12" rx="6" ry="8" fill="none" stroke="currentColor" stroke-width="2"/>
-                        <line x1="8" y1="20" x2="8" y2="24" stroke="currentColor" stroke-width="3"/>
-                        <circle cx="18" cy="12" r="3" fill="currentColor"/>
-                    </svg>
-                </span>
-                <span class="label">Наст. теннис</span>
-            </button>
         </div>
 
         <div class="panel-spacer"></div>
@@ -243,28 +233,6 @@
                         <span class="controlValue" id="angleValue">0.00°</span>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- ========== PONG GAME AREA ========== -->
-        <div id="pongGameArea">
-            <div id="pongGameContent">
-                <div id="pongScorePanel">
-                    <div class="pongPlayerPanel" id="pongPlayer2Panel">
-                        <span class="pongPlayerName" id="pongPlayer2Name">Игрок 2</span>
-                        <span class="pongScore" id="pongScore2" style="color: #3b82f6;">0</span>
-                    </div>
-                    <div class="pongPlayerPanel" id="pongPlayer1Panel">
-                        <span class="pongScore" id="pongScore1" style="color: #22c55e;">0</span>
-                        <span class="pongPlayerName" id="pongPlayer1Name">Игрок 1</span>
-                    </div>
-                </div>
-                <div id="pongInfo">
-                    <span id="pongSpectatorBadge">Наблюдатель</span>
-                    <span id="pongStatus">ГОТОВ</span>
-                </div>
-                <canvas id="pongCanvas" width="500" height="700"></canvas>
-                <div class="pong-controls-hint">Управление: A/D или стрелки влево/вправо. Двигай ракетку для топспина!</div>
             </div>
         </div>
     </div>
@@ -480,42 +448,22 @@
                 </div>
             </div>
 
-            <!-- Games Tab -->
+                        <!-- Games Tab -->
             <div class="stats-content" id="statsGames">
-                <div class="stats-game-grid">
-                    <div class="stats-game-card">
-                        <h3><svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle></svg> Бильярд</h3>
-                        <div class="mini-stats">
-                            <div class="mini-stat">
-                                <div class="mini-stat-value" id="billiardGames">0</div>
-                                <div class="mini-stat-label">Игр</div>
-                            </div>
-                            <div class="mini-stat">
-                                <div class="mini-stat-value" id="billiardWins">0</div>
-                                <div class="mini-stat-label">Побед</div>
-                            </div>
-                            <div class="mini-stat">
-                                <div class="mini-stat-value" id="billiardRating">1000</div>
-                                <div class="mini-stat-label">Рейтинг</div>
-                            </div>
+                <div class="stats-game-card" style="max-width: 400px; margin: 0 auto;">
+                    <h3><svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle></svg> Бильярд</h3>
+                    <div class="mini-stats">
+                        <div class="mini-stat">
+                            <div class="mini-stat-value" id="billiardGames">0</div>
+                            <div class="mini-stat-label">Игр</div>
                         </div>
-                    </div>
-                    
-                    <div class="stats-game-card">
-                        <h3><svg class="game-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="3" height="12" rx="1"></rect><rect x="19" y="6" width="3" height="12" rx="1"></rect><circle cx="12" cy="12" r="2"></circle></svg> Пинг-понг</h3>
-                        <div class="mini-stats">
-                            <div class="mini-stat">
-                                <div class="mini-stat-value" id="pongGames">0</div>
-                                <div class="mini-stat-label">Игр</div>
-                            </div>
-                            <div class="mini-stat">
-                                <div class="mini-stat-value" id="pongWins">0</div>
-                                <div class="mini-stat-label">Побед</div>
-                            </div>
-                            <div class="mini-stat">
-                                <div class="mini-stat-value" id="pongRating">1000</div>
-                                <div class="mini-stat-label">Рейтинг</div>
-                            </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-value" id="billiardWins">0</div>
+                            <div class="mini-stat-label">Побед</div>
+                        </div>
+                        <div class="mini-stat">
+                            <div class="mini-stat-value" id="billiardRating">0</div>
+                            <div class="mini-stat-label">FRP</div>
                         </div>
                     </div>
                 </div>
@@ -550,7 +498,6 @@
     <script src="js/utils.js"></script>
     <script src="js/firebase-service.js"></script>
     <script src="js/game-billiard.js"></script>
-    <script src="js/game-pong.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
 </body>

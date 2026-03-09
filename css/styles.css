@@ -62,9 +62,13 @@ body {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    transition: width 0.3s ease, min-width 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
     overflow: hidden;
     z-index: 10;
+}
+
+#leftPanel * {
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 #leftPanel.collapsed {
@@ -97,10 +101,11 @@ body {
 #collapseBtn .icon-svg {
     width: 18px;
     height: 18px;
-    transition: transform 0.3s;
-    stroke: var(--text-muted);
-    fill: none;
-    display: inline-block;
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    stroke: var(--text-muted) !important;
+    fill: none !important;
+    display: block !important;
+    opacity: 1 !important;
 }
 
 #leftPanel.collapsed #collapseSection {
@@ -117,19 +122,11 @@ body {
     align-items: center;
     justify-content: center;
     padding: 0;
+    margin: 0 auto;
 }
 
 #leftPanel.collapsed #collapseBtn .icon-svg {
-    width: 18px;
-    height: 18px;
-    min-width: 18px;
-    min-height: 18px;
     transform: rotate(180deg);
-    stroke: var(--text-muted);
-    fill: none;
-    display: inline-block;
-    opacity: 1;
-    visibility: visible;
 }
 
 
@@ -388,7 +385,7 @@ body {
     padding: 24px;
     flex: 1;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
 }
 
 .menuContent.active {
@@ -399,7 +396,7 @@ body {
     background: var(--bg-dark);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 20px;
+    padding: 24px;
 }
 
 .menu-section-header {
@@ -567,7 +564,7 @@ body {
 #lobbyInfo {
     display: none;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
     padding: 24px;
     background: var(--bg-dark);
     border-radius: 12px;
@@ -990,91 +987,6 @@ body {
     font-family: monospace;
 }
 
-/* ========== PONG GAME AREA ========== */
-#pongGameArea {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    padding: 20px;
-    gap: 16px;
-    width: 100%;
-}
-
-#pongScorePanel {
-    width: 500px;
-    max-width: 100%;
-    height: 50px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    display: flex;
-    overflow: hidden;
-}
-
-.pongPlayerPanel {
-    flex: 1;
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.pongPlayerPanel:first-child {
-    border-right: 1px solid var(--border);
-}
-
-.pongScore {
-    font-size: 28px;
-    font-weight: 700;
-}
-
-.pongPlayerName {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-#pongInfo {
-    height: 28px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-#pongSpectatorBadge {
-    display: none;
-    height: 24px;
-    padding: 0 10px;
-    background: var(--accent-yellow);
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    color: #000;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    line-height: 24px;
-}
-
-#pongStatus {
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-#pongCanvas {
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    max-width: 100%;
-}
-
-.pong-controls-hint {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 8px;
-}
-
 /* ========== CHAT PANEL ========== */
 #chatPanel {
     width: 300px;
@@ -1085,12 +997,10 @@ body {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease,
-                border 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
     z-index: 10;
     overflow: hidden;
+    transform: translateX(0);
 }
 
 #chatPanel.hidden {
@@ -1099,6 +1009,15 @@ body {
     border-left-width: 0;
     opacity: 0;
     pointer-events: none;
+    transform: translateX(100%);
+}
+
+#chatPanel > * {
+    transition: opacity 0.3s ease;
+}
+
+#chatPanel.hidden > * {
+    opacity: 0;
 }
 
 #chatHeader {
@@ -2113,29 +2032,6 @@ select option {
         grid-template-columns: 1fr;
     }
 }
-
-@media (max-width: 600px) {
-    #pongScorePanel {
-        width: 100%;
-    }
-    
-    #pongCanvas {
-        width: 100%;
-        height: auto;
-    }
-    
-    .pongPlayerPanel {
-        padding: 10px;
-    }
-    
-    .pongScore {
-        font-size: 22px;
-    }
-    
-    .pongPlayerName {
-        font-size: 11px;
-    }
-    
     .modal-content {
         width: 95vw;
         padding: 16px;
@@ -2154,7 +2050,6 @@ select option {
         font-size: 22px;
         letter-spacing: 4px;
     }
-}
 
 /* ========== PLAYER PANEL COLORS ========== */
 .playerPanel[style*="--player-color: #22c55e"]::before {

@@ -53,23 +53,7 @@ function updateTimerDisplay() {
 }
 
 function switchGame(game) {
-    if (gameStarted || lobbyCode) { 
-        if (!confirm('Выйти из текущей игры?')) return; 
-        leaveLobby(); 
-    }
-    currentGame = game;
-    document.querySelectorAll('.gameBtn').forEach(b => b.classList.remove('active'));
-    document.getElementById(game === 'billiard' ? 'billiardBtn' : 'pongBtn').classList.add('active');
-    document.getElementById('gameTitle').textContent = game === 'billiard' ? 'БИЛЬЯРД' : 'НАСТОЛЬНЫЙ ТЕННИС';
-    
-    const playerCountSelect = document.getElementById('playerCount');
-    if (game === 'pong') { 
-        playerCountSelect.value = '2'; 
-        playerCountSelect.disabled = true; 
-    } else { 
-        playerCountSelect.disabled = false; 
-    }
-    loadPublicServers();
+    currentGame = 'billiard';
 }
 
 function showMenu() {
@@ -90,14 +74,7 @@ function showLobbyUI() {
 function showGame() {
     document.getElementById('menuPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'block';
-    
-    if (currentGame === 'billiard') { 
-        document.getElementById('gameArea').style.display = 'flex'; 
-        document.getElementById('pongGameArea').style.display = 'none'; 
-    } else { 
-        document.getElementById('gameArea').style.display = 'none'; 
-        document.getElementById('pongGameArea').style.display = 'flex'; 
-    }
+    document.getElementById('gameArea').style.display = 'flex';
 }
 
 function updateViewersCount() {
@@ -370,11 +347,11 @@ function closeStatsModal() {
 }
 
 function updateStatsDisplay() {
-    const totalGames = playerStats.billiard.games + playerStats.pong.games;
-    const totalWins = playerStats.billiard.wins + playerStats.pong.wins;
+    const totalGames = playerStats.billiard?.games || 0;
+    const totalWins = playerStats.billiard?.wins || 0;
     const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
-    const totalRating = Math.round((playerStats.billiard.frp + playerStats.pong.frp) / 2);
-    
+    const totalRating = playerStats.billiard?.frp || 0;
+
     // Диаграмма винрейта
     const circumference = 2 * Math.PI * 54;
     const offset = circumference - (winRate / 100) * circumference;
@@ -400,15 +377,10 @@ function updateStatsDisplay() {
     const ratingEl = document.getElementById('statsRatingValue');
     if (ratingEl) ratingEl.textContent = totalRating;
     
-    // Статистика по играм
-    document.getElementById('billiardGames').textContent = playerStats.billiard.games;
-    document.getElementById('billiardWins').textContent = playerStats.billiard.wins;
-    document.getElementById('billiardRating').textContent = playerStats.billiard.frp;
-    
-    document.getElementById('pongGames').textContent = playerStats.pong.games;
-    document.getElementById('pongWins').textContent = playerStats.pong.wins;
-    document.getElementById('pongRating').textContent = playerStats.pong.frp;
-    
+        // Статистика по играм
+    document.getElementById('billiardGames').textContent = playerStats.billiard?.games || 0;
+    document.getElementById('billiardWins').textContent = playerStats.billiard?.wins || 0;
+    document.getElementById('billiardRating').textContent = playerStats.billiard?.frp || 0;
     // Диаграммы по играм
     updateGameCharts();
     updateMatchHistory();

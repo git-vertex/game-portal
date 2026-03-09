@@ -26,7 +26,7 @@ let power = 0;
 let aimAngle = 0;
 let wheelAngleOffset = 0;
 let opponentAim = null;
-let playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, pong: { games: 0, wins: 0, frp: 0 }, history: [] };
+let playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
 
 function loadAccount() {
     const saved = localStorage.getItem('billiardAccount');
@@ -110,7 +110,7 @@ async function register() {
         const userRef = db.ref('users/' + nick.toLowerCase());
         const snapshot = await userRef.once('value');
         if (snapshot.exists()) { errorEl.textContent = 'Никнейм уже занят'; return; }
-        const freshStats = { billiard: { games: 0, wins: 0, frp: 0 }, pong: { games: 0, wins: 0, frp: 0 }, history: [] };
+        const freshStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
         await userRef.set({ nickname: nick, password: simpleHash(pass), avatar: customAvatarData || '', created: Date.now(), stats: freshStats });
         playerStats = freshStats;
         currentNickname = nick; currentAvatar = customAvatarData || ''; isLoggedIn = true;
@@ -156,7 +156,7 @@ function logout() {
     isLoggedIn = false; 
     currentNickname = ''; 
     currentAvatar = ''; 
-    playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, pong: { games: 0, wins: 0, frp: 0 }, history: [] };
+    playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
     localStorage.removeItem('billiardAccount'); 
     localStorage.removeItem('playerStats');
     updateAccountDisplay(); 
@@ -531,7 +531,7 @@ setTimeout(() => { hideLoading(); }, 5000);
 
 // Game Loop
 (function gameLoop() {
-    if (currentGame === 'billiard') { updateBilliard(); drawBilliard(); }
-    else { updatePongPaddle(); updatePong(); drawPong(); }
+    updateBilliard();
+    drawBilliard();
     requestAnimationFrame(gameLoop);
 })();
