@@ -58,10 +58,10 @@ function switchGame(game) {
 function showMenu() {
     document.getElementById('menuPanel').style.display = 'flex';
     document.getElementById('gameArea').style.display = 'none';
-    document.getElementById('pongGameArea').style.display = 'none';
     document.getElementById('gameControls').style.display = 'none';
     document.getElementById('lobbyInfo').style.display = 'none';
     document.getElementById('createSection').style.display = 'block';
+    gameStarted = false;
     startAutoRefresh();
 }
 

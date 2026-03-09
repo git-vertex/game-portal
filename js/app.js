@@ -26,7 +26,7 @@ let power = 0;
 let aimAngle = 0;
 let wheelAngleOffset = 0;
 let opponentAim = null;
-let playerStats = { billiard: { games: 0, wins: 0, frp: 1000 }, pong: { games: 0, wins: 0, frp: 1000 }, history: [] };
+let playerStats = { billiard: { games: 0, wins: 0, frp: 1000 }, history: [] };
 
 function loadAccount() {
     const saved = localStorage.getItem('billiardAccount');
@@ -38,9 +38,10 @@ function loadStats() {
     const saved = localStorage.getItem('playerStats'); 
     if (saved) {
         playerStats = JSON.parse(saved);
-        if (!playerStats.pong) playerStats.pong = { games: 0, wins: 0, frp: 1000 };
         if (!playerStats.billiard) playerStats.billiard = { games: 0, wins: 0, frp: 1000 };
+        if (playerStats.billiard.frp === 0 || playerStats.billiard.frp === undefined) playerStats.billiard.frp = 1000;
         if (!playerStats.history) playerStats.history = [];
+        saveStats();
     }
 }
 function saveStats() { localStorage.setItem('playerStats', JSON.stringify(playerStats)); }
@@ -118,7 +119,7 @@ async function register() {
         const userRef = db.ref('users/' + nick.toLowerCase());
         const snapshot = await userRef.once('value');
         if (snapshot.exists()) { errorEl.textContent = 'Никнейм уже занят'; return; }
-        const freshStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
+        const freshStats = { billiard: { games: 0, wins: 0, frp: 1000 }, history: [] };
         await userRef.set({ nickname: nick, password: simpleHash(pass), avatar: customAvatarData || '', created: Date.now(), stats: freshStats });
         playerStats = freshStats;
         currentNickname = nick; currentAvatar = customAvatarData || ''; isLoggedIn = true;
