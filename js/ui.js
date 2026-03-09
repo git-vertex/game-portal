@@ -3,7 +3,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const pongCanvas = document.getElementById('pongCanvas');
-const pongCtx = pongCanvas.getContext('2d');
+const pongCtx = pongCanvas ? pongCanvas.getContext('2d') : null;
 
 let turnTimerInterval = null;
 let turnTimeLeft = 20;
@@ -388,8 +388,10 @@ function updateStatsDisplay() {
 
 function updateGameCharts() {
     // Бильярд
-    const billiardWinRate = playerStats.billiard.games > 0 
-        ? Math.round((playerStats.billiard.wins / playerStats.billiard.games) * 100) 
+    const billiardGames = playerStats.billiard?.games || 0;
+    const billiardWins = playerStats.billiard?.wins || 0;
+    const billiardWinRate = billiardGames > 0 
+        ? Math.round((billiardWins / billiardGames) * 100) 
         : 0;
     
     const billiardBar = document.getElementById('billiardWinBar');
@@ -399,20 +401,6 @@ function updateGameCharts() {
     const billiardPercent = document.getElementById('billiardWinPercent');
     if (billiardPercent) {
         billiardPercent.textContent = billiardWinRate + '%';
-    }
-    
-    // Понг
-    const pongWinRate = playerStats.pong.games > 0 
-        ? Math.round((playerStats.pong.wins / playerStats.pong.games) * 100) 
-        : 0;
-    
-    const pongBar = document.getElementById('pongWinBar');
-    if (pongBar) {
-        pongBar.style.width = pongWinRate + '%';
-    }
-    const pongPercent = document.getElementById('pongWinPercent');
-    if (pongPercent) {
-        pongPercent.textContent = pongWinRate + '%';
     }
 }
 
@@ -542,6 +530,7 @@ function getCountryFlag(countryCode) {
 function recordMatch(game, won, pocketedCount = 0) {
     if (isBotMode) return;
     if (!isLoggedIn) return;
+    if (!playerStats[game]) playerStats[game] = { games: 0, wins: 0, frp: 1000 };
     
     playerStats[game].games++;
     if (won) playerStats[game].wins++;

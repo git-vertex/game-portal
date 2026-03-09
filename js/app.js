@@ -26,7 +26,7 @@ let power = 0;
 let aimAngle = 0;
 let wheelAngleOffset = 0;
 let opponentAim = null;
-let playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
+let playerStats = { billiard: { games: 0, wins: 0, frp: 1000 }, pong: { games: 0, wins: 0, frp: 1000 }, history: [] };
 
 function loadAccount() {
     const saved = localStorage.getItem('billiardAccount');
@@ -34,7 +34,15 @@ function loadAccount() {
     loadStats(); updateAccountDisplay();
 }
 
-function loadStats() { const saved = localStorage.getItem('playerStats'); if (saved) playerStats = JSON.parse(saved); }
+function loadStats() { 
+    const saved = localStorage.getItem('playerStats'); 
+    if (saved) {
+        playerStats = JSON.parse(saved);
+        if (!playerStats.pong) playerStats.pong = { games: 0, wins: 0, frp: 1000 };
+        if (!playerStats.billiard) playerStats.billiard = { games: 0, wins: 0, frp: 1000 };
+        if (!playerStats.history) playerStats.history = [];
+    }
+}
 function saveStats() { localStorage.setItem('playerStats', JSON.stringify(playerStats)); }
 
 function updateAccountDisplay() {
