@@ -2637,6 +2637,5 @@ select:disabled {
 #dynamic-banner {
     width: 100%;
     min-height: 20px; /* Чтобы блок не схлопывался, если картинки нет */
-    background: rgba(0, 0, 0, 0.1); /* Для теста видно, где он */
     overflow: hidden;
 }
