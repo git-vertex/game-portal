@@ -225,7 +225,9 @@ function playWithBot() {
         gameState.playerNicks = { 1: myNickname, 2: 'Бот' };
         gameState.playerAvatars = { 1: getAvatar(), 2: '' };
         gameState.gameStarted = true;
+        gameState.currentPlayer = 2; // БОТ ХОДИТ ПЕРВЫМ
         initBalls(); startBilliardGame();
+        setTimeout(botBilliardMove, 1500); // Бот делает первый ход
     } else {
         initPongState();
         pongState.playerNicks = { 1: myNickname, 2: 'Бот' };

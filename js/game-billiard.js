@@ -330,6 +330,8 @@ function endTurn() {
     }
 }
 
+// ==================== УЛЬТРА БОТ ====================
+
 function botBilliardMove() {
     if (!gameState || gameState.isMoving || gameState.winner) return;
     
@@ -337,13 +339,112 @@ function botBilliardMove() {
     if (!cue || cue.pocketed) return;
     
     const botType = gameState.playerTypes[2];
+    const isBreakShot = !botType && gameState.balls.filter(b => b.pocketed && b.type !== 'cue').length === 0;
     
-    // НЕВОЗМОЖНЫЙ БОТ: Полная симуляция всех возможных ударов
     let bestShot = null;
-    let bestScore = -Infinity;
     
-    // Получаем целевые шары
-    const targetBalls = gameState.balls.filter(b => {
+    if (isBreakShot) {
+        // ИДЕАЛЬНЫЙ РАЗБОЙ
+        bestShot = calculatePerfectBreak(cue);
+    } else {
+        // ПОИСК ЛУЧШЕГО УДАРА
+        bestShot = findBestShot(cue, botType);
+    }
+    
+    if (bestShot) {
+        // Небольшая случайность чтобы не было подозрительно идеально (можно убрать)
+        // bestShot.vx += (Math.random() - 0.5) * 0.1;
+        // bestShot.vy += (Math.random() - 0.5) * 0.1;
+        performShot(bestShot.vx, bestShot.vy);
+    }
+}
+
+// Идеальный разбой пирамиды
+function calculatePerfectBreak(cue) {
+    const pyramidX = TABLE.x + 650;
+    const pyramidY = TABLE.y + TABLE.h / 2;
+    
+    // Бьём в переднюю точку пирамиды с максимальной силой
+    const dx = pyramidX - cue.x;
+    const dy = pyramidY - cue.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    // Сила и направление для максимального разброса
+    const power = 24;
+    
+    return {
+        vx: (dx / dist) * power,
+        vy: (dy / dist) * power,
+        score: 1000
+    };
+}
+
+// Главная функция поиска лучшего удара
+function findBestShot(cue, botType) {
+    let allShots = [];
+    
+    // Получаем все целевые шары
+    const targetBalls = getTargetBalls(botType);
+    
+    // 1. ПРЯМЫЕ УДАРЫ В ЛУЗЫ
+    for (const ball of targetBalls) {
+        for (const pocket of POCKETS) {
+            const shot = calculatePerfectDirectShot(cue, ball, pocket);
+            if (shot) allShots.push(shot);
+        }
+    }
+    
+    // 2. УДАРЫ С ОДНИМ ОТСКОКОМ ОТ БОРТА (биток)
+    for (const ball of targetBalls) {
+        for (const pocket of POCKETS) {
+            const shots = calculateCushionShots(cue, ball, pocket);
+            allShots = allShots.concat(shots);
+        }
+    }
+    
+    // 3. КОМБИНАЦИИ (через другой шар)
+    for (const ball of targetBalls) {
+        for (const pocket of POCKETS) {
+            const shot = calculateComboShot(cue, ball, pocket);
+            if (shot) allShots.push(shot);
+        }
+    }
+    
+    // 4. КАРАМБОЛЬ (отскок целевого шара от борта в лузу)
+    for (const ball of targetBalls) {
+        for (const pocket of POCKETS) {
+            const shot = calculateCaromShot(cue, ball, pocket);
+            if (shot) allShots.push(shot);
+        }
+    }
+    
+    // Симулируем топ-10 ударов и выбираем лучший
+    allShots.sort((a, b) => b.score - a.score);
+    
+    let bestShot = null;
+    let bestResult = -Infinity;
+    
+    for (const shot of allShots.slice(0, 15)) {
+        const result = fullSimulation(shot.vx, shot.vy, botType);
+        const totalScore = shot.score + result.score;
+        
+        if (totalScore > bestResult) {
+            bestResult = totalScore;
+            bestShot = { ...shot, finalScore: totalScore };
+        }
+    }
+    
+    // Если ничего хорошего не нашли - бьём в ближайший свой шар
+    if (!bestShot || bestResult < 100) {
+        bestShot = calculateSafeShot(cue, botType);
+    }
+    
+    return bestShot;
+}
+
+// Получить целевые шары
+function getTargetBalls(botType) {
+    return gameState.balls.filter(b => {
         if (b.pocketed || b.type === 'cue') return false;
         if (b.type === 'eight') {
             const remaining = gameState.balls.filter(x => !x.pocketed && x.type === botType).length;
@@ -352,287 +453,386 @@ function botBilliardMove() {
         if (botType && b.type !== botType) return false;
         return true;
     });
-    
-    // Пробуем прямые удары
-    for (const ball of targetBalls) {
-        for (const pocket of POCKETS) {
-            const shot = calculateDirectShot(cue, ball, pocket);
-            if (shot && shot.score > bestScore) {
-                bestScore = shot.score;
-                bestShot = shot;
-            }
-        }
-    }
-    
-    // Пробуем удары с отскоком от борта
-    for (const ball of targetBalls) {
-        for (const pocket of POCKETS) {
-            const shot = calculateCushionShot(cue, ball, pocket);
-            if (shot && shot.score > bestScore) {
-                bestScore = shot.score;
-                bestShot = shot;
-            }
-        }
-    }
-    
-    // Пробуем комбинации (удар через другой шар)
-    for (const ball of targetBalls) {
-        for (const pocket of POCKETS) {
-            const shot = calculateComboShot(cue, ball, pocket);
-            if (shot && shot.score > bestScore) {
-                bestScore = shot.score;
-                bestShot = shot;
-            }
-        }
-    }
-    
-    // Симулируем лучшие удары для проверки
-    if (bestShot) {
-        const simResult = simulateShot(bestShot.vx, bestShot.vy);
-        if (simResult.pocketed > 0) {
-            bestShot.score += simResult.pocketed * 500;
-        }
-    }
-    
-    // Если ничего не нашли, бьём в любой шар
-    if (!bestShot) {
-        for (const ball of gameState.balls) {
-            if (ball.pocketed || ball.type === 'cue') continue;
-            const dx = ball.x - cue.x;
-            const dy = ball.y - cue.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            bestShot = { vx: (dx / dist) * 15, vy: (dy / dist) * 15, score: 0 };
-            break;
-        }
-    }
-    
-    if (bestShot) {
-        performShot(bestShot.vx, bestShot.vy);
-    }
 }
 
-// Прямой удар в шар -> луза
-function calculateDirectShot(cue, ball, pocket) {
+// ИДЕАЛЬНЫЙ ПРЯМОЙ УДАР
+function calculatePerfectDirectShot(cue, ball, pocket) {
+    // Вектор от шара к лузе
     const ballToPocketX = pocket.x - ball.x;
     const ballToPocketY = pocket.y - ball.y;
     const ballToPocketDist = Math.sqrt(ballToPocketX ** 2 + ballToPocketY ** 2);
     
+    // Направление
     const dirX = ballToPocketX / ballToPocketDist;
     const dirY = ballToPocketY / ballToPocketDist;
     
-    // Точка удара - позади шара
+    // Точка удара - ровно позади шара на линии к лузе
     const hitX = ball.x - dirX * BALL_R * 2;
     const hitY = ball.y - dirY * BALL_R * 2;
     
-    // Проверка на столе
-    if (hitX < TABLE.x || hitX > TABLE.x + TABLE.w || hitY < TABLE.y || hitY > TABLE.y + TABLE.h) {
-        return null;
-    }
+    // Проверка что точка на столе
+    if (!isOnTable(hitX, hitY)) return null;
     
+    // Вектор от битка к точке удара
     const cueToHitX = hitX - cue.x;
     const cueToHitY = hitY - cue.y;
     const cueToHitDist = Math.sqrt(cueToHitX ** 2 + cueToHitY ** 2);
     
-    if (cueToHitDist < BALL_R * 2) return null;
+    if (cueToHitDist < BALL_R * 3) return null;
     
-    // Проверка препятствий
-    if (isPathBlocked(cue.x, cue.y, hitX, hitY, ball.id, 0)) return null;
-    if (isPathBlocked(ball.x, ball.y, pocket.x, pocket.y, ball.id, ball.id)) return null;
+    // ПРОВЕРКА ПРЕПЯТСТВИЙ
+    if (isPathBlockedPrecise(cue.x, cue.y, hitX, hitY, [0])) return null;
+    if (isPathBlockedPrecise(ball.x, ball.y, pocket.x, pocket.y, [ball.id])) return null;
     
+    // Направление удара
     const shotDirX = cueToHitX / cueToHitDist;
     const shotDirY = cueToHitY / cueToHitDist;
     
-    // Идеальная сила для забития
-    const totalDist = cueToHitDist + ballToPocketDist;
-    const power = Math.min(22, Math.max(8, totalDist * 0.025 + 10));
+    // Угол между направлением удара и нужным направлением
+    const hitAngle = Math.acos(Math.max(-1, Math.min(1, 
+        -(shotDirX * dirX + shotDirY * dirY)
+    )));
     
-    // Оценка: чем прямее угол, тем лучше
-    const hitAngle = Math.abs(Math.atan2(dirY, dirX) - Math.atan2(shotDirY, shotDirX));
-    const angleScore = Math.max(0, 1 - hitAngle / (Math.PI / 4));
+    // Чем меньше угол - тем лучше (прямой удар)
+    if (hitAngle > Math.PI / 3) return null; // Угол больше 60° - не реально
     
-    const score = 1000 * angleScore - ballToPocketDist * 0.3 - cueToHitDist * 0.2;
+    // Идеальная сила
+    const power = calculatePerfectPower(cueToHitDist, ballToPocketDist, hitAngle);
     
-    return { vx: shotDirX * power, vy: shotDirY * power, score };
+    // Оценка удара
+    const angleScore = Math.cos(hitAngle); // 1 = идеально прямо
+    const distScore = 1 - (ballToPocketDist / 500);
+    const score = 1000 * angleScore + 500 * distScore;
+    
+    return {
+        vx: shotDirX * power,
+        vy: shotDirY * power,
+        score: score,
+        type: 'direct',
+        targetBall: ball.id,
+        pocket: pocket
+    };
 }
 
-// Удар с отскоком от борта
-function calculateCushionShot(cue, ball, pocket) {
-    let bestCushionShot = null;
-    let bestScore = -Infinity;
+// Рассчёт идеальной силы
+function calculatePerfectPower(cueToBallDist, ballToPocketDist, angle) {
+    // Учитываем потерю энергии при ударе и трение
+    const energyTransfer = Math.cos(angle) * 0.95;
+    const frictionLoss = (cueToBallDist + ballToPocketDist) * 0.001;
     
-    // Пробуем отскок от каждого борта
+    const basePower = 10;
+    const distancePower = (cueToBallDist + ballToPocketDist * 1.2) * 0.015;
+    const anglePower = (1 - Math.cos(angle)) * 5;
+    
+    return Math.min(24, Math.max(8, basePower + distancePower + anglePower + frictionLoss));
+}
+
+// УДАРЫ С ОТСКОКОМ ОТ БОРТА
+function calculateCushionShots(cue, ball, pocket) {
+    const shots = [];
+    
+    // 4 борта
     const cushions = [
-        { axis: 'y', value: TABLE.y, normal: 1 },           // верх
-        { axis: 'y', value: TABLE.y + TABLE.h, normal: -1 }, // низ
-        { axis: 'x', value: TABLE.x, normal: 1 },           // лево
-        { axis: 'x', value: TABLE.x + TABLE.w, normal: -1 }  // право
+        { name: 'top', y: TABLE.y, normalY: 1 },
+        { name: 'bottom', y: TABLE.y + TABLE.h, normalY: -1 },
+        { name: 'left', x: TABLE.x, normalX: 1 },
+        { name: 'right', x: TABLE.x + TABLE.w, normalX: -1 }
     ];
     
     for (const cushion of cushions) {
-        // Рассчитываем точку отскока для попадания в шар
-        let bouncePoint;
-        
-        if (cushion.axis === 'y') {
-            // Отражаем шар относительно борта
-            const mirrorY = 2 * cushion.value - ball.y;
-            const dx = ball.x - cue.x;
-            const dy = mirrorY - cue.y;
-            const t = (cushion.value - cue.y) / dy;
-            
-            if (t <= 0 || t >= 1) continue;
-            
-            bouncePoint = { x: cue.x + dx * t, y: cushion.value };
-        } else {
-            const mirrorX = 2 * cushion.value - ball.x;
-            const dx = mirrorX - cue.x;
-            const dy = ball.y - cue.y;
-            const t = (cushion.value - cue.x) / dx;
-            
-            if (t <= 0 || t >= 1) continue;
-            
-            bouncePoint = { x: cushion.value, y: cue.y + dy * t };
-        }
-        
-        // Проверяем точка на столе
-        if (bouncePoint.x < TABLE.x + 5 || bouncePoint.x > TABLE.x + TABLE.w - 5) continue;
-        if (bouncePoint.y < TABLE.y + 5 || bouncePoint.y > TABLE.y + TABLE.h - 5) continue;
-        
-        // Проверяем путь до отскока
-        if (isPathBlocked(cue.x, cue.y, bouncePoint.x, bouncePoint.y, -1, 0)) continue;
-        
-        // Проверяем путь от отскока до шара
-        const hitX = ball.x - (pocket.x - ball.x) / Math.sqrt((pocket.x - ball.x) ** 2 + (pocket.y - ball.y) ** 2) * BALL_R * 2;
-        const hitY = ball.y - (pocket.y - ball.y) / Math.sqrt((pocket.x - ball.x) ** 2 + (pocket.y - ball.y) ** 2) * BALL_R * 2;
-        
-        if (isPathBlocked(bouncePoint.x, bouncePoint.y, hitX, hitY, ball.id, 0)) continue;
-        
-        // Рассчитываем удар
-        const dx = bouncePoint.x - cue.x;
-        const dy = bouncePoint.y - cue.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        const totalDist = dist + Math.sqrt((hitX - bouncePoint.x) ** 2 + (hitY - bouncePoint.y) ** 2);
-        const power = Math.min(20, Math.max(10, totalDist * 0.02 + 12));
-        
-        const score = 600 - totalDist * 0.5; // Отскоки менее приоритетны
-        
-        if (score > bestScore) {
-            bestScore = score;
-            bestCushionShot = { vx: (dx / dist) * power, vy: (dy / dist) * power, score };
-        }
+        const shot = calculateSingleCushionShot(cue, ball, pocket, cushion);
+        if (shot) shots.push(shot);
     }
     
-    return bestCushionShot;
+    return shots;
 }
 
-// Комбо удар (через другой шар)
+function calculateSingleCushionShot(cue, ball, pocket, cushion) {
+    // Отражаем точку удара относительно борта
+    let mirrorHitX, mirrorHitY;
+    
+    // Точка куда нужно попасть в шар
+    const ballToPocketX = pocket.x - ball.x;
+    const ballToPocketY = pocket.y - ball.y;
+    const ballToPocketDist = Math.sqrt(ballToPocketX ** 2 + ballToPocketY ** 2);
+    const dirX = ballToPocketX / ballToPocketDist;
+    const dirY = ballToPocketY / ballToPocketDist;
+    const hitX = ball.x - dirX * BALL_R * 2;
+    const hitY = ball.y - dirY * BALL_R * 2;
+    
+    if (cushion.y !== undefined) {
+        // Горизонтальный борт
+        mirrorHitY = 2 * cushion.y - hitY;
+        mirrorHitX = hitX;
+        
+        // Точка отскока
+        const t = (cushion.y - cue.y) / (mirrorHitY - cue.y);
+        if (t <= 0.1 || t >= 0.9) return null;
+        
+        const bounceX = cue.x + (mirrorHitX - cue.x) * t;
+        const bounceY = cushion.y;
+        
+        if (bounceX < TABLE.x + 30 || bounceX > TABLE.x + TABLE.w - 30) return null;
+        
+        // Проверка путей
+        if (isPathBlockedPrecise(cue.x, cue.y, bounceX, bounceY, [0])) return null;
+        if (isPathBlockedPrecise(bounceX, bounceY, hitX, hitY, [0, ball.id])) return null;
+        if (isPathBlockedPrecise(ball.x, ball.y, pocket.x, pocket.y, [ball.id])) return null;
+        
+        const totalDist = Math.sqrt((bounceX - cue.x) ** 2 + (bounceY - cue.y) ** 2) +
+                          Math.sqrt((hitX - bounceX) ** 2 + (hitY - bounceY) ** 2);
+        
+        const dx = bounceX - cue.x;
+        const dy = bounceY - cue.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const power = Math.min(22, Math.max(12, totalDist * 0.018 + 12));
+        
+        return {
+            vx: (dx / dist) * power,
+            vy: (dy / dist) * power,
+            score: 600 - totalDist * 0.3,
+            type: 'cushion'
+        };
+    } else {
+        // Вертикальный борт
+        mirrorHitX = 2 * cushion.x - hitX;
+        mirrorHitY = hitY;
+        
+        const t = (cushion.x - cue.x) / (mirrorHitX - cue.x);
+        if (t <= 0.1 || t >= 0.9) return null;
+        
+        const bounceX = cushion.x;
+        const bounceY = cue.y + (mirrorHitY - cue.y) * t;
+        
+        if (bounceY < TABLE.y + 30 || bounceY > TABLE.y + TABLE.h - 30) return null;
+        
+        if (isPathBlockedPrecise(cue.x, cue.y, bounceX, bounceY, [0])) return null;
+        if (isPathBlockedPrecise(bounceX, bounceY, hitX, hitY, [0, ball.id])) return null;
+        if (isPathBlockedPrecise(ball.x, ball.y, pocket.x, pocket.y, [ball.id])) return null;
+        
+        const totalDist = Math.sqrt((bounceX - cue.x) ** 2 + (bounceY - cue.y) ** 2) +
+                          Math.sqrt((hitX - bounceX) ** 2 + (hitY - bounceY) ** 2);
+        
+        const dx = bounceX - cue.x;
+        const dy = bounceY - cue.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const power = Math.min(22, Math.max(12, totalDist * 0.018 + 12));
+        
+        return {
+            vx: (dx / dist) * power,
+            vy: (dy / dist) * power,
+            score: 600 - totalDist * 0.3,
+            type: 'cushion'
+        };
+    }
+}
+
+// КОМБО УДАР (через промежуточный шар)
 function calculateComboShot(cue, targetBall, pocket) {
     let bestCombo = null;
     let bestScore = -Infinity;
     
-    // Ищем промежуточный шар
     for (const middleBall of gameState.balls) {
-        if (middleBall.pocketed || middleBall.type === 'cue' || middleBall.id === targetBall.id) continue;
+        if (middleBall.pocketed || middleBall.type === 'cue') continue;
+        if (middleBall.id === targetBall.id) continue;
         
-        // Вектор от промежуточного шара к целевому
-        const midToTargetX = targetBall.x - middleBall.x;
-        const midToTargetY = targetBall.y - middleBall.y;
-        const midToTargetDist = Math.sqrt(midToTargetX ** 2 + midToTargetY ** 2);
+        // Вектор куда должен полететь средний шар чтобы ударить целевой в лузу
+        const targetToPocket = normalize(pocket.x - targetBall.x, pocket.y - targetBall.y);
+        const hitTargetX = targetBall.x - targetToPocket.x * BALL_R * 2;
+        const hitTargetY = targetBall.y - targetToPocket.y * BALL_R * 2;
         
-        if (midToTargetDist > 200) continue; // Слишком далеко
+        // Вектор для удара среднего шара
+        const middleToHit = normalize(hitTargetX - middleBall.x, hitTargetY - middleBall.y);
+        const hitMiddleX = middleBall.x - middleToHit.x * BALL_R * 2;
+        const hitMiddleY = middleBall.y - middleToHit.y * BALL_R * 2;
         
-        // Направление удара промежуточного в целевой
-        const dirX = midToTargetX / midToTargetDist;
-        const dirY = midToTargetY / midToTargetDist;
+        if (!isOnTable(hitMiddleX, hitMiddleY)) continue;
         
-        // Проверяем что целевой попадёт в лузу
-        const targetToPocketX = pocket.x - targetBall.x;
-        const targetToPocketY = pocket.y - targetBall.y;
-        const targetToPocketDist = Math.sqrt(targetToPocketX ** 2 + targetToPocketY ** 2);
+        // Вектор от битка
+        const cueToMiddle = normalize(hitMiddleX - cue.x, hitMiddleY - cue.y);
+        const cueToMiddleDist = distance(cue.x, cue.y, hitMiddleX, hitMiddleY);
         
-        const pocketDirX = targetToPocketX / targetToPocketDist;
-        const pocketDirY = targetToPocketY / targetToPocketDist;
+        if (cueToMiddleDist < BALL_R * 3) continue;
         
-        // Угол между направлением удара и направлением к лузе
-        const dot = dirX * pocketDirX + dirY * pocketDirY;
-        if (dot < 0.7) continue; // Угол слишком большой
+        // Проверка всех путей
+        if (isPathBlockedPrecise(cue.x, cue.y, hitMiddleX, hitMiddleY, [0])) continue;
+        if (isPathBlockedPrecise(middleBall.x, middleBall.y, hitTargetX, hitTargetY, [middleBall.id])) continue;
+        if (isPathBlockedPrecise(targetBall.x, targetBall.y, pocket.x, pocket.y, [targetBall.id])) continue;
         
-        // Точка удара в промежуточный шар
-        const hitMidX = middleBall.x - dirX * BALL_R * 2;
-        const hitMidY = middleBall.y - dirY * BALL_R * 2;
+        // Угол удара
+        const angle = Math.acos(Math.max(-1, Math.min(1, 
+            -(cueToMiddle.x * middleToHit.x + cueToMiddle.y * middleToHit.y)
+        )));
         
-        // Путь битка к промежуточному
-        const cueToMidX = hitMidX - cue.x;
-        const cueToMidY = hitMidY - cue.y;
-        const cueToMidDist = Math.sqrt(cueToMidX ** 2 + cueToMidY ** 2);
+        if (angle > Math.PI / 4) continue; // Слишком большой угол
         
-        if (isPathBlocked(cue.x, cue.y, hitMidX, hitMidY, middleBall.id, 0)) continue;
-        if (isPathBlocked(middleBall.x, middleBall.y, targetBall.x, targetBall.y, targetBall.id, middleBall.id)) continue;
-        if (isPathBlocked(targetBall.x, targetBall.y, pocket.x, pocket.y, targetBall.id, targetBall.id)) continue;
+        const totalDist = cueToMiddleDist + 
+                          distance(middleBall.x, middleBall.y, targetBall.x, targetBall.y) +
+                          distance(targetBall.x, targetBall.y, pocket.x, pocket.y);
         
-        const shotDirX = cueToMidX / cueToMidDist;
-        const shotDirY = cueToMidY / cueToMidDist;
-        
-        const power = Math.min(22, Math.max(12, (cueToMidDist + midToTargetDist + targetToPocketDist) * 0.02 + 14));
-        const score = 400 * dot - cueToMidDist * 0.2;
+        const power = Math.min(24, Math.max(14, totalDist * 0.015 + 15));
+        const score = 500 * Math.cos(angle) - totalDist * 0.2;
         
         if (score > bestScore) {
             bestScore = score;
-            bestCombo = { vx: shotDirX * power, vy: shotDirY * power, score };
+            bestCombo = {
+                vx: cueToMiddle.x * power,
+                vy: cueToMiddle.y * power,
+                score: score,
+                type: 'combo'
+            };
         }
     }
     
     return bestCombo;
 }
 
-// Симуляция удара для проверки результата
-function simulateShot(vx, vy) {
-    // Копируем состояние шаров
+// КАРАМБОЛЬ (шар отскакивает от борта в лузу)
+function calculateCaromShot(cue, ball, pocket) {
+    // Проверяем можно ли забить шар отскоком от борта
+    const cushions = [
+        { y: TABLE.y },
+        { y: TABLE.y + TABLE.h },
+        { x: TABLE.x },
+        { x: TABLE.x + TABLE.w }
+    ];
+    
+    for (const cushion of cushions) {
+        let mirrorPocketX, mirrorPocketY;
+        
+        if (cushion.y !== undefined) {
+            mirrorPocketY = 2 * cushion.y - pocket.y;
+            mirrorPocketX = pocket.x;
+        } else {
+            mirrorPocketX = 2 * cushion.x - pocket.x;
+            mirrorPocketY = pocket.y;
+        }
+        
+        // Направление от шара к зеркальной лузе
+        const toMirror = normalize(mirrorPocketX - ball.x, mirrorPocketY - ball.y);
+        const hitBallX = ball.x - toMirror.x * BALL_R * 2;
+        const hitBallY = ball.y - toMirror.y * BALL_R * 2;
+        
+        if (!isOnTable(hitBallX, hitBallY)) continue;
+        
+        // От битка к точке удара
+        const cueToBall = normalize(hitBallX - cue.x, hitBallY - cue.y);
+        const cueToBallDist = distance(cue.x, cue.y, hitBallX, hitBallY);
+        
+        if (cueToBallDist < BALL_R * 3) continue;
+        
+        // Проверка пути
+        if (isPathBlockedPrecise(cue.x, cue.y, hitBallX, hitBallY, [0])) continue;
+        
+        // Угол
+        const angle = Math.acos(Math.max(-1, Math.min(1, 
+            -(cueToBall.x * toMirror.x + cueToBall.y * toMirror.y)
+        )));
+        
+        if (angle > Math.PI / 3) continue;
+        
+        const power = Math.min(22, Math.max(12, cueToBallDist * 0.02 + 14));
+        const score = 400 * Math.cos(angle);
+        
+        return {
+            vx: cueToBall.x * power,
+            vy: cueToBall.y * power,
+            score: score,
+            type: 'carom'
+        };
+    }
+    
+    return null;
+}
+
+// Безопасный удар если ничего не получается
+function calculateSafeShot(cue, botType) {
+    const targetBalls = botType ? 
+        gameState.balls.filter(b => !b.pocketed && b.type === botType) :
+        gameState.balls.filter(b => !b.pocketed && b.type !== 'cue' && b.type !== 'eight');
+    
+    if (targetBalls.length === 0) {
+        // Бьём в любой шар
+        const anyBall = gameState.balls.find(b => !b.pocketed && b.type !== 'cue');
+        if (anyBall) {
+            const dir = normalize(anyBall.x - cue.x, anyBall.y - cue.y);
+            return { vx: dir.x * 12, vy: dir.y * 12, score: 0 };
+        }
+        return null;
+    }
+    
+    // Находим ближайший свой шар
+    let closest = null;
+    let closestDist = Infinity;
+    
+    for (const ball of targetBalls) {
+        const dist = distance(cue.x, cue.y, ball.x, ball.y);
+        if (dist < closestDist && !isPathBlockedPrecise(cue.x, cue.y, ball.x, ball.y, [0])) {
+            closestDist = dist;
+            closest = ball;
+        }
+    }
+    
+    if (closest) {
+        const dir = normalize(closest.x - cue.x, closest.y - cue.y);
+        return { vx: dir.x * 15, vy: dir.y * 15, score: 50 };
+    }
+    
+    return { vx: 10, vy: 0, score: 0 };
+}
+
+// ПОЛНАЯ СИМУЛЯЦИЯ УДАРА
+function fullSimulation(vx, vy, botType) {
     const simBalls = gameState.balls.map(b => ({
-        ...b,
-        x: b.x, y: b.y, vx: 0, vy: 0, pocketed: b.pocketed
+        id: b.id,
+        x: b.x,
+        y: b.y,
+        vx: 0,
+        vy: 0,
+        pocketed: b.pocketed,
+        type: b.type,
+        number: b.number
     }));
     
-    // Применяем удар
     simBalls[0].vx = vx;
     simBalls[0].vy = vy;
     
-    let pocketed = 0;
-    let steps = 0;
-    const maxSteps = 500;
+    let ownPocketed = 0;
+    let opponentPocketed = 0;
+    let eightPocketed = false;
+    let cuePocketed = false;
     
-    while (steps < maxSteps) {
+    const maxSteps = 800;
+    
+    for (let step = 0; step < maxSteps; step++) {
         let anyMoving = false;
         
-        // Обновляем позиции
+        // Движение
         for (const ball of simBalls) {
             if (ball.pocketed) continue;
-            if (Math.abs(ball.vx) > 0.01 || Math.abs(ball.vy) > 0.01) {
+            const speed = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+            if (speed > 0.05) {
                 anyMoving = true;
                 ball.x += ball.vx;
                 ball.y += ball.vy;
-                ball.vx *= 0.99;
-                ball.vy *= 0.99;
-                
-                // Столкновения с бортами
-                if (ball.x - BALL_R < TABLE.x) { ball.x = TABLE.x + BALL_R; ball.vx *= -0.8; }
-                if (ball.x + BALL_R > TABLE.x + TABLE.w) { ball.x = TABLE.x + TABLE.w - BALL_R; ball.vx *= -0.8; }
-                if (ball.y - BALL_R < TABLE.y) { ball.y = TABLE.y + BALL_R; ball.vy *= -0.8; }
-                if (ball.y + BALL_R > TABLE.y + TABLE.h) { ball.y = TABLE.y + TABLE.h - BALL_R; ball.vy *= -0.8; }
-                
-                // Проверка луз
-                for (const p of POCKETS) {
-                    if (Math.sqrt((ball.x - p.x) ** 2 + (ball.y - p.y) ** 2) < POCKET_R) {
-                        if (!ball.pocketed && ball.type !== 'cue') pocketed++;
-                        ball.pocketed = true;
-                        ball.vx = 0;
-                        ball.vy = 0;
-                    }
-                }
+                ball.vx *= 0.992;
+                ball.vy *= 0.992;
+            } else {
+                ball.vx = 0;
+                ball.vy = 0;
             }
         }
         
-        // Столкновения между шарами
+        // Борта
+        for (const ball of simBalls) {
+            if (ball.pocketed) continue;
+            if (ball.x - BALL_R < TABLE.x) { ball.x = TABLE.x + BALL_R; ball.vx = -ball.vx * 0.8; }
+            if (ball.x + BALL_R > TABLE.x + TABLE.w) { ball.x = TABLE.x + TABLE.w - BALL_R; ball.vx = -ball.vx * 0.8; }
+            if (ball.y - BALL_R < TABLE.y) { ball.y = TABLE.y + BALL_R; ball.vy = -ball.vy * 0.8; }
+            if (ball.y + BALL_R > TABLE.y + TABLE.h) { ball.y = TABLE.y + TABLE.h - BALL_R; ball.vy = -ball.vy * 0.8; }
+        }
+        
+        // Столкновения
         for (let i = 0; i < simBalls.length; i++) {
             for (let j = i + 1; j < simBalls.length; j++) {
                 const a = simBalls[i], b = simBalls[j];
@@ -641,8 +841,14 @@ function simulateShot(vx, vy) {
                 const dx = b.x - a.x, dy = b.y - a.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                if (dist < BALL_R * 2 && dist > 0) {
+                if (dist < BALL_R * 2 && dist > 0.1) {
                     const nx = dx / dist, ny = dy / dist;
+                    const overlap = BALL_R * 2 - dist;
+                    a.x -= overlap * nx / 2;
+                    a.y -= overlap * ny / 2;
+                    b.x += overlap * nx / 2;
+                    b.y += overlap * ny / 2;
+                    
                     const dvn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
                     if (dvn > 0) {
                         a.vx -= dvn * nx * 0.95;
@@ -654,39 +860,98 @@ function simulateShot(vx, vy) {
             }
         }
         
+        // Лузы
+        for (const ball of simBalls) {
+            if (ball.pocketed) continue;
+            for (const p of POCKETS) {
+                if (Math.sqrt((ball.x - p.x) ** 2 + (ball.y - p.y) ** 2) < POCKET_R) {
+                    ball.pocketed = true;
+                    ball.vx = 0;
+                    ball.vy = 0;
+                    
+                    if (ball.type === 'cue') {
+                        cuePocketed = true;
+                    } else if (ball.type === 'eight') {
+                        eightPocketed = true;
+                    } else if (ball.type === botType || !botType) {
+                        ownPocketed++;
+                    } else {
+                        opponentPocketed++;
+                    }
+                }
+            }
+        }
+        
         if (!anyMoving) break;
-        steps++;
     }
     
-    return { pocketed };
+    // Расчёт очков
+    let score = ownPocketed * 1000;
+    score -= opponentPocketed * 300;
+    if (cuePocketed) score -= 800;
+    if (eightPocketed) {
+        const remaining = gameState.balls.filter(b => !b.pocketed && b.type === botType).length;
+        if (remaining > 0) {
+            score -= 5000; // Проиграли
+        } else {
+            score += 3000; // Выиграли
+        }
+    }
+    
+    return { score, ownPocketed, cuePocketed };
 }
 
-// Проверка препятствий с улучшенной точностью
-function isPathBlocked(x1, y1, x2, y2, excludeId, excludeId2) {
+// ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
+
+function normalize(x, y) {
+    const len = Math.sqrt(x * x + y * y);
+    return len > 0 ? { x: x / len, y: y / len } : { x: 0, y: 0 };
+}
+
+function distance(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+function isOnTable(x, y) {
+    const margin = BALL_R + 2;
+    return x >= TABLE.x + margin && x <= TABLE.x + TABLE.w - margin &&
+           y >= TABLE.y + margin && y <= TABLE.y + TABLE.h - margin;
+}
+
+function isPathBlockedPrecise(x1, y1, x2, y2, excludeIds) {
     const dx = x2 - x1;
     const dy = y2 - y1;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist === 0) return false;
+    if (dist < 1) return false;
     
     const dirX = dx / dist;
     const dirY = dy / dist;
     
     for (const ball of gameState.balls) {
         if (ball.pocketed) continue;
-        if (ball.id === excludeId || ball.id === excludeId2) continue;
+        if (excludeIds.includes(ball.id)) continue;
         
+        // Расстояние от центра шара до линии
         const toBallX = ball.x - x1;
         const toBallY = ball.y - y1;
+        
+        // Проекция на линию
         const proj = toBallX * dirX + toBallY * dirY;
         
-        if (proj < BALL_R || proj > dist - BALL_R) continue;
+        // Шар до или после отрезка
+        if (proj < BALL_R * 0.5 || proj > dist - BALL_R * 0.5) continue;
         
+        // Ближайшая точка на линии
         const closestX = x1 + dirX * proj;
         const closestY = y1 + dirY * proj;
+        
+        // Расстояние от шара до линии
         const distToLine = Math.sqrt((closestX - ball.x) ** 2 + (closestY - ball.y) ** 2);
         
-        if (distToLine < BALL_R * 2.1) return true;
+        // Блокирует если расстояние меньше диаметра шаров
+        if (distToLine < BALL_R * 2.05) return true;
     }
+    
     return false;
 }
 
