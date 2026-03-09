@@ -455,6 +455,83 @@ function simShot(vx, vy, botType) {
     return score;
 }
 
+function updateBilliard() {
+    if (!gameStarted || !gameState?.balls || cueBallRestoring) return;
+    
+    for (let step = 0; step < PHYSICS_STEPS; step++) {
+        for (const ball of gameState.balls) { 
+            if (!ball.pocketed && getSpeed(ball) > 0) { 
+                ball.x += ball.vx / PHYSICS_STEPS; 
+                ball.y += ball.vy / PHYSICS_STEPS; 
+            } 
+        }
+        
+        for (let iter = 0; iter < 3; iter++) { 
+            for (let i = 0; i < gameState.balls.length; i++) { 
+                for (let j = i + 1; j < gameState.balls.length; j++) { 
+                    const a = gameState.balls[i], b = gameState.balls[j]; 
+                    if (!a.pocketed && !b.pocketed) resolveBallCollision(a, b); 
+                } 
+            } 
+        }
+        
+        for (const ball of gameState.balls) { 
+            if (!ball.pocketed) { 
+                resolveWallCollision(ball); 
+                checkPockets(ball); 
+            } 
+        }
+    }
+    
+    let anyMoving = false;
+    for (const ball of gameState.balls) {
+        if (ball.pocketed) continue;
+        const speed = getSpeed(ball);
+        if (speed > 0) { 
+            const f = speed > 10 ? 0.9992 : speed > 5 ? 0.9985 : speed > 2 ? 0.997 : speed > 0.5 ? 0.994 : speed > 0.1 ? 0.99 : 0.98; 
+            ball.vx *= f; 
+            ball.vy *= f; 
+            if (getSpeed(ball) < MIN_VELOCITY) { 
+                ball.vx = 0; 
+                ball.vy = 0; 
+            } else {
+                anyMoving = true; 
+            }
+        }
+    }
+    
+    const wasMoving = gameState.isMoving; 
+    gameState.isMoving = anyMoving;
+    
+    if (wasMoving && !anyMoving) {
+        const cue = gameState.balls[0];
+        if (cue && cue.pocketed && !cueBallRestoring) {
+            return;
+        }
+        endTurn();
+    }
+    
+    updateBilliardInfo();
+}
+
+function updateBilliardInfo() {
+    const el = document.getElementById('info');
+    if (!el) return;
+    
+    if (gameState.winner) { 
+        const nick = gameState.playerNicks[gameState.winner]; 
+        el.textContent = (isOnline && !isSpectator && gameState.winner === myPlayer) || (isBotMode && gameState.winner === 1) ? 'ПОБЕДА!' : `${nick} победил`; 
+        el.style.color = PLAYER_COLORS[gameState.winner - 1]; 
+    } else if (gameState.isMoving) { 
+        el.textContent = '...'; 
+        el.style.color = '#666'; 
+    } else { 
+        const nick = gameState.playerNicks[gameState.currentPlayer]; 
+        el.textContent = (isOnline && !isSpectator) ? (isMyTurn() ? 'ВАШ ХОД' : nick) : (isBotMode ? (gameState.currentPlayer === 1 ? 'ВАШ ХОД' : 'ХОД БОТА') : nick); 
+        el.style.color = PLAYER_COLORS[gameState.currentPlayer - 1]; 
+    }
+}
+
 function updateBilliardInfo() {
     const el = document.getElementById('info');
     if (!el) return;

@@ -1,3 +1,23 @@
+async function cleanOldUsers() {
+    if (!db || !firebaseReady) {
+        console.log('Подожди, Firebase не готов');
+        return;
+    }
+    const snapshot = await db.ref('users').once('value');
+    const users = snapshot.val() || {};
+    let count = 0;
+    for (const [key, user] of Object.entries(users)) {
+        if (!user.stats || user.stats.billiard?.frp === 1000 || user.stats.billiard?.frp === undefined) {
+            await db.ref('users/' + key).remove();
+            console.log('Удалён:', key);
+            count++;
+        }
+    }
+    console.log('Удалено пользователей:', count);
+    if (typeof loadLeaderboard === 'function') loadLeaderboard();
+}
+window.cleanOldUsers = cleanOldUsers;
+
 let gameState = null;
 let pongState = null;
 let lobbyCode = null;
