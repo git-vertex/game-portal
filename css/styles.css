@@ -2031,7 +2031,7 @@ select option {
     .stats-game-grid {
         grid-template-columns: 1fr;
     }
-}
+    
     .modal-content {
         width: 95vw;
         padding: 16px;
@@ -2050,6 +2050,7 @@ select option {
         font-size: 22px;
         letter-spacing: 4px;
     }
+}
 
 /* ========== PLAYER PANEL COLORS ========== */
 .playerPanel[style*="--player-color: #22c55e"]::before {
