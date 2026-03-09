@@ -503,10 +503,6 @@ document.getElementById('chatSendBtn').addEventListener('click', () => {
 });
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'a' || e.key === 'A') pongKeys.a = true;
-    if (e.key === 'd' || e.key === 'D') pongKeys.d = true;
-    if (e.key === 'ArrowLeft') { pongKeys.left = true; e.preventDefault(); }
-    if (e.key === 'ArrowRight') { pongKeys.right = true; e.preventDefault(); }
     if (document.activeElement.tagName === 'INPUT') return;
     if ((e.key === 'r' || e.key === 'R') && gameStarted && !isSpectator) {
         if (currentGame === 'billiard' && !gameState?.isMoving) {
@@ -524,10 +520,6 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('keyup', e => {
-    if (e.key === 'a' || e.key === 'A') pongKeys.a = false;
-    if (e.key === 'd' || e.key === 'D') pongKeys.d = false;
-    if (e.key === 'ArrowLeft') pongKeys.left = false;
-    if (e.key === 'ArrowRight') pongKeys.right = false;
 });
 
 // Init

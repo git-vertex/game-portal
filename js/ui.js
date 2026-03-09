@@ -1,14 +1,13 @@
 // ui.js
 
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const pongCanvas = document.getElementById('pongCanvas');
-const pongCtx = pongCanvas ? pongCanvas.getContext('2d') : null;
-
+// ВАЖНО: Объявления переменных В САМОМ НАЧАЛЕ
 let turnTimerInterval = null;
 let turnTimeLeft = 20;
 let historySortMode = 'recent';
 let leaderboardData = [];
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
 function startTurnTimer() {
     stopTurnTimer();
