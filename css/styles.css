@@ -2632,8 +2632,3 @@ select:disabled {
 .match-item .match-info .match-rating {
     color: var(--text-dim);
 }
-
-/* УДАЛИТЬ СНИЗУ ЭТО */
-#dynamic-banner {
-    min-height: 20px; /* Чтобы блок не схлопывался, если картинки нет */
-}
