@@ -284,7 +284,7 @@ function joinLobby() {
         if (currentGame !== gameType) {
             currentGame = gameType;
             document.querySelectorAll('.gameBtn').forEach(b => b.classList.remove('active'));
-            document.getElementById(gameType === 'billiard' ? 'billiardBtn' : 'pongBtn').classList.add('active');
+            document.getElementById(gameType === 'billiard' ? 'billiardBtn' : 'pongBtn')?.classList.add('active');
             document.getElementById('gameTitle').textContent = gameType === 'billiard' ? 'БИЛЬЯРД' : 'ПИНГ-ПОНГ';
         }
         lobbyCode = code;
@@ -304,8 +304,8 @@ function joinLobby() {
             }
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
-
-            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };byRef.child('players').set(playersInfo);
+            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };
+            lobbyRef.child('players').set(playersInfo);
             document.querySelector('[data-tab="create"]').click();
             showLobbyUI();
             document.getElementById('lobbyCode').textContent = lobbyCode;
