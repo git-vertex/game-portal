@@ -206,7 +206,7 @@ async function logout() {
 function resetState() {
     document.getElementById('gameControls').style.display = 'none';
     stopTurnTimer();
-    if (lobbyRef) { lobbyRef.off(); lobbyRef = null; }
+    if (loblobbyRef) { loblobbyRef.off(); loblobbyRef = null; }
     removePublicLobby();
     gameState = null; pongState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
     document.getElementById('foulMessage').textContent = '';
@@ -227,22 +227,22 @@ function createLobby() {
     document.getElementById('startGameBtn').style.display = '';
     document.getElementById('startGameBtn').disabled = true;
     playersInfo = { 1: { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 } };
-    lobbyRef = db.ref('lobbies/' + lobbyCode);
+    loblobbyRef = db.ref('lobbies/' + lobbyCode);
     if (currentGame === 'billiard') {
         initGameState();
         gameState.totalPlayers = maxPlayers;
         gameState.playerNicks = { 1: myNickname };
         gameState.playerAvatars = { 1: getAvatar() };
-        lobbyRef.set({ state: gameState, maxPlayers, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'billiard', shot: null, aim: null, lastUpdate: Date.now() });
+        loblobbyRef.set({ state: gameState, maxPlayers, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'billiard', shot: null, aim: null, lastUpdate: Date.now() });
     } else {
         initPongState();
         pongState.playerNicks = { 1: myNickname };
         pongState.playerAvatars = { 1: getAvatar() };
-        lobbyRef.set({ pongState: pongState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'pong', paddleMove: null, lastUpdate: Date.now() });
+        loblobbyRef.set({ pongState: pongState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'pong', paddleMove: null, lastUpdate: Date.now() });
     }
     setupLobbyListeners(); updatePublicLobby();
     sendGlobalChat(`${myNickname} создал лобби`, true);
-    setInterval(() => { if (lobbyRef && isHost) { lobbyRef.child('lastUpdate').set(Date.now()); updatePublicLobby(); } }, 5000);
+    setInterval(() => { if (loblobbyRef && isHost) { loblobbyRef.child('lastUpdate').set(Date.now()); updatePublicLobby(); } }, 5000);
 }
 
 function playWithBot() {
@@ -276,8 +276,8 @@ function joinLobby() {
     if (code.length !== 6 || code === lobbyCode) return;
     resetState();
     myNickname = getNickname();
-    const tempLobbyRef = db.ref('lobbies/' + code);
-    tempLobbyRef.once('value').then(snapshot => {
+    const tempLoblobbyRef = db.ref('lobbies/' + code);
+    tempLoblobbyRef.once('value').then(snapshot => {
         if (!snapshot.exists()) { return; }
         const data = snapshot.val();
         const gameType = data.game || 'billiard';
@@ -288,14 +288,14 @@ function joinLobby() {
             document.getElementById('gameTitle').textContent = gameType === 'billiard' ? 'БИЛЬЯРД' : 'ПИНГ-ПОНГ';
         }
         lobbyCode = code;
-        lobbyRef = tempLobbyRef;
+        loblobbyRef = tempLoblobbyRef;
         maxPlayers = data.maxPlayers || 2;
         playersInfo = data.players || {};
         const playerCount = Object.keys(playersInfo).length;
         const gameAlreadyStarted = data.state?.gameStarted || data.pongState?.gameStarted;
         if (playerCount >= maxPlayers || gameAlreadyStarted) {
             isSpectator = true; isOnline = true; myPlayer = 0;
-            lobbyRef.child('spectators').transaction(c => (c || 0) + 1);
+            loblobbyRef.child('spectators').transaction(c => (c || 0) + 1);
             sendGlobalChat(`${myNickname} наблюдает`, true);
             setupSpectatorListeners();
             if (gameAlreadyStarted) {
@@ -305,7 +305,7 @@ function joinLobby() {
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
 
-            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };byRef.child('players').set(playersInfo);
+            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };lobbyRef.child('players').set(playersInfo);
             document.querySelector('[data-tab="create"]').click();
             showLobbyUI();
             document.getElementById('lobbyCode').textContent = lobbyCode;
@@ -318,7 +318,7 @@ function joinLobby() {
 }
 
 function setupLobbyListeners() {
-        lobbyRef.child('players').on('value', snapshot => {
+        loblobbyRef.child('players').on('value', snapshot => {
     const newPlayersInfo = snapshot.val() || {};
     if (Object.keys(newPlayersInfo).length === 0 && !isHost) { leaveLobby(); return; }
     const playerCount = Object.keys(newPlayersInfo).length;
@@ -338,38 +338,38 @@ function setupLobbyListeners() {
         playersInfo = newPlayersInfo;
         updatePlayersList(); updateViewersCount();
     });
-    lobbyRef.child('spectators').on('value', snapshot => { spectatorCount = snapshot.val() || 0; updateViewersCount(); });
+    loblobbyRef.child('spectators').on('value', snapshot => { spectatorCount = snapshot.val() || 0; updateViewersCount(); });
 }
 
 function setupSpectatorListeners() {
     setupLobbyListeners();
     if (currentGame === 'billiard') {
-        lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
-        lobbyRef.child('aim').on('value', snapshot => { opponentAim = snapshot.val(); });
+        loblobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
+        loblobbyRef.child('aim').on('value', snapshot => { opponentAim = snapshot.val(); });
     } else {
-        lobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
+        loblobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
     }
 }
 
 function setupPlayerListeners() {
     setupLobbyListeners();
     if (currentGame === 'billiard') {
-        lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
-        lobbyRef.child('shot').on('value', snapshot => { const shot = snapshot.val(); if (shot && shot.player !== myPlayer && !gameState?.isMoving) performShot(shot.vx, shot.vy); });
-        lobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
+        loblobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
+        loblobbyRef.child('shot').on('value', snapshot => { const shot = snapshot.val(); if (shot && shot.player !== myPlayer && !gameState?.isMoving) performShot(shot.vx, shot.vy); });
+        loblobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
     } else {
-        lobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
-        lobbyRef.child('paddleMove').on('value', snapshot => { const move = snapshot.val(); if (move && move.player !== myPlayer && pongState) pongState.paddles[move.player - 1].y = move.y; });
+        loblobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
+        loblobbyRef.child('paddleMove').on('value', snapshot => { const move = snapshot.val(); if (move && move.player !== myPlayer && pongState) pongState.paddles[move.player - 1].y = move.y; });
     }
 }
 
 function leaveLobby() {
     const wasInLobby = lobbyCode;
     const wasNick = myNickname;
-    if (lobbyRef) {
-        if (isSpectator) lobbyRef.child('spectators').transaction(c => Math.max(0, (c || 0) - 1));
-        else if (isHost) { removePublicLobby(); lobbyRef.remove(); }
-        else if (myPlayer > 0) { delete playersInfo[myPlayer]; lobbyRef.child('players').set(playersInfo); }
+    if (loblobbyRef) {
+        if (isSpectator) loblobbyRef.child('spectators').transaction(c => Math.max(0, (c || 0) - 1));
+        else if (isHost) { removePublicLobby(); loblobbyRef.remove(); }
+        else if (myPlayer > 0) { delete playersInfo[myPlayer]; loblobbyRef.child('players').set(playersInfo); }
     }
     if (wasInLobby) sendGlobalChat(`${wasNick} вышел`, true);
     resetState(); showMenu();
@@ -383,13 +383,13 @@ function startOnlineGame() {
         gameState.totalPlayers = count; gameState.gameStarted = true;
         for (const [num, info] of Object.entries(playersInfo)) { gameState.playerNicks[num] = info.nick; gameState.playerAvatars[num] = info.avatar || ''; }
         isOnline = true;
-        lobbyRef.child('state').set(gameState);
+        loblobbyRef.child('state').set(gameState);
         updatePublicLobby(); startBilliardGame();
     } else {
         pongState.gameStarted = true; pongState.paused = false;
         for (const [num, info] of Object.entries(playersInfo)) { pongState.playerNicks[num] = info.nick; pongState.playerAvatars[num] = info.avatar || ''; }
         isOnline = true;
-        lobbyRef.child('pongState').set(pongState);
+        loblobbyRef.child('pongState').set(pongState);
         updatePublicLobby(); startPongGame();
     }
     sendGlobalChat(`Игра началась!`, true);
@@ -399,9 +399,9 @@ function startBilliardGame() {
     gameStarted = true; initAudio(); showGame();
     if (isSpectator) document.getElementById('spectatorBadge').style.display = 'block';
     createScorePanels(); updateScorePanel(); startTurnTimer();
-    if (isHost && lobbyRef) {
-        lobbyRef.child('shot').on('value', snapshot => { const shot = snapshot.val(); if (shot && shot.player !== myPlayer && !gameState?.isMoving) performShot(shot.vx, shot.vy); });
-        lobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
+    if (isHost && loblobbyRef) {
+        loblobbyRef.child('shot').on('value', snapshot => { const shot = snapshot.val(); if (shot && shot.player !== myPlayer && !gameState?.isMoving) performShot(shot.vx, shot.vy); });
+        loblobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
     }
 }
 
@@ -547,7 +547,7 @@ document.addEventListener('keydown', e => {
             if (isBotMode || (isOnline && isHost)) {
                 initPongState(); pongState.gameStarted = true; pongState.paused = false;
                 pongState.playerNicks = { 1: myNickname, 2: isBotMode ? 'Бот' : playersInfo[2]?.nick || 'Игрок 2' };
-                if (isOnline && lobbyRef) lobbyRef.child('pongState').set(pongState);
+                if (isOnline && loblobbyRef) loblobbyRef.child('pongState').set(pongState);
             }
         }
     }
