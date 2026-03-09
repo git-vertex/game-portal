@@ -455,6 +455,7 @@ function simShot(vx, vy, botType) {
     return score;
 }
 
+
 function updateBilliard() {
     if (!gameStarted || !gameState?.balls || cueBallRestoring) return;
     
@@ -505,13 +506,29 @@ function updateBilliard() {
     
     if (wasMoving && !anyMoving) {
         const cue = gameState.balls[0];
-        if (cue && cue.pocketed && !cueBallRestoring) {
-            return;
-        }
+        if (cue && cue.pocketed && !cueBallRestoring) return;
         endTurn();
     }
     
     updateBilliardInfo();
+}
+
+function updateBilliardInfo() {
+    const el = document.getElementById('info');
+    if (!el) return;
+    
+    if (gameState.winner) { 
+        const nick = gameState.playerNicks[gameState.winner]; 
+        el.textContent = (isOnline && !isSpectator && gameState.winner === myPlayer) || (isBotMode && gameState.winner === 1) ? 'ПОБЕДА!' : `${nick} победил`; 
+        el.style.color = PLAYER_COLORS[gameState.winner - 1]; 
+    } else if (gameState.isMoving) { 
+        el.textContent = '...'; 
+        el.style.color = '#666'; 
+    } else { 
+        const nick = gameState.playerNicks[gameState.currentPlayer]; 
+        el.textContent = (isOnline && !isSpectator) ? (isMyTurn() ? 'ВАШ ХОД' : nick) : (isBotMode ? (gameState.currentPlayer === 1 ? 'ВАШ ХОД' : 'ХОД БОТА') : nick); 
+        el.style.color = PLAYER_COLORS[gameState.currentPlayer - 1]; 
+    }
 }
 
 function updateBilliardInfo() {
