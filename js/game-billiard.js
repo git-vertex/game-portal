@@ -913,8 +913,8 @@ function drawBilliard() {
         ctx.arc(ball.x - 4, ball.y - 4, 2, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,255,255,0.35)';
         ctx.fill();
-    }
-
+    } 
+ 
     // Прицел оппонента
     if (opponentAim && !gameState.isMoving && !isMyTurn()) {
         const cue = gameState.balls[0];
