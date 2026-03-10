@@ -80,7 +80,7 @@ function addChatMessage(nick, text, system, color, avatar) {
     if (system) {
         div.innerHTML = text;
     } else {
-        const avatarHtml = avatar ? 
+        const avatarHtml = avatar ?
             `<div class="avatar" style="background-image: url(${avatar})"></div>` :
             `<div class="avatar" style="display:flex;align-items:center;justify-content:center;border:1px solid var(--border);"><svg style="width:14px;height:14px;stroke:var(--text-muted);fill:none;stroke-width:2;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>`;
         let codeBtn = '';
@@ -158,24 +158,30 @@ function removePublicLobby() {
     }
 }
 
-function syncState() { 
-    if (isHost && lobbyRef && gameState) lobbyRef.child('state').set(gameState); 
+function syncState() {
+    if (isHost && lobbyRef && gameState) lobbyRef.child('state').set(gameState);
 }
 
-function sendShot(vx, vy) { 
-    if (lobbyRef) { 
-        lobbyRef.child('shot').set({ vx, vy, player: myPlayer, time: Date.now() }); 
-        lobbyRef.child('aim').set(null); 
-    } 
+function sendShot(vx, vy, spinX, spinY) {
+    if (lobbyRef) {
+        lobbyRef.child('shot').set({
+            vx, vy,
+            spinX: spinX || 0,
+            spinY: spinY || 0,
+            player: myPlayer,
+            time: Date.now()
+        });
+        lobbyRef.child('aim').set(null);
+    }
 }
 
-function syncAim() { 
-    if (!lobbyRef || Date.now() - lastAimSync < 50) return; 
-    lastAimSync = Date.now(); 
-    lobbyRef.child('aim').set({ angle: aimAngle + wheelAngleOffset, power, player: myPlayer }); 
+function syncAim() {
+    if (!lobbyRef || Date.now() - lastAimSync < 50) return;
+    lastAimSync = Date.now();
+    lobbyRef.child('aim').set({ angle: aimAngle + wheelAngleOffset, power, player: myPlayer });
 }
 
-function clearAim() { 
-    if (lobbyRef) lobbyRef.child('aim').set(null); 
-    opponentAim = null; 
+function clearAim() {
+    if (lobbyRef) lobbyRef.child('aim').set(null);
+    opponentAim = null;
 }

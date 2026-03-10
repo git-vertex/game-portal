@@ -21,7 +21,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     height: 100%;
     overflow: hidden;
 }
@@ -502,8 +503,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
 }
 
 .create-options {
@@ -860,7 +868,7 @@ body {
     justify-content: center;
     font-size: 8px;
     font-weight: 600;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .miniBall.stripe {
@@ -915,8 +923,15 @@ body {
 }
 
 @keyframes timerPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 #canvas {
@@ -1010,11 +1025,11 @@ body {
     pointer-events: none;
 }
 
-#chatPanel > * {
+#chatPanel>* {
     transition: opacity 0.3s ease;
 }
 
-#chatPanel.hidden > * {
+#chatPanel.hidden>* {
     opacity: 0;
 }
 
@@ -1061,8 +1076,15 @@ body {
 }
 
 @keyframes slideInChat {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .chatMessage .avatar {
@@ -1149,8 +1171,8 @@ body {
     border: 1px solid var(--border);
     border-radius: 6px;
     cursor: pointer;
-    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                background 0.2s;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        background 0.2s;
 }
 
 #toggleChatBtn:hover {
@@ -1253,7 +1275,8 @@ button.full {
 }
 
 /* ========== INPUTS ========== */
-input, select {
+input,
+select {
     height: 40px;
     padding: 0 14px;
     background: var(--bg-dark);
@@ -1268,7 +1291,8 @@ input::placeholder {
     color: var(--text-muted);
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
     outline: none;
     border-color: var(--accent-green);
 }
@@ -1307,7 +1331,8 @@ input:focus, select:focus {
 }
 
 /* ========== MODALS ========== */
-#authModal, #statsModal {
+#authModal,
+#statsModal {
     display: none;
     position: fixed;
     top: 0;
@@ -1328,7 +1353,8 @@ input:focus, select:focus {
     overflow-y: auto;
 }
 
-#authModal.show, #statsModal.show {
+#authModal.show,
+#statsModal.show {
     display: flex;
 }
 
@@ -1625,6 +1651,7 @@ input:focus, select:focus {
     font-weight: 700;
     color: var(--accent-green);
 }
+
 .rating-value-small {
     color: var(--accent-green);
     font-weight: 600;
@@ -1790,7 +1817,9 @@ input:focus, select:focus {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-text {
@@ -1824,9 +1853,15 @@ input:focus, select:focus {
 
 /* ========== ANIMATIONS ========== */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
+
 /* ========== SCROLLBARS ========== */
 ::-webkit-scrollbar {
     width: 6px;
@@ -1922,7 +1957,7 @@ select option {
     #scorePanel {
         width: 100%;
     }
-    
+
     #canvas {
         width: 100%;
         height: auto;
@@ -1934,11 +1969,11 @@ select option {
         width: 260px;
         min-width: 260px;
     }
-    
+
     #toggleChatBtn {
         right: 268px;
     }
-    
+
     #toggleChatBtn.chat-hidden {
         right: 12px;
     }
@@ -1949,34 +1984,34 @@ select option {
         width: 56px;
         min-width: 56px;
     }
-    
+
     #leftPanel #gamesHeader {
         opacity: 0;
         height: 0;
         padding: 0;
     }
-    
+
     #leftPanel .gameBtn {
         padding: 0;
         justify-content: center;
     }
-    
+
     #leftPanel .gameBtn .label {
         display: none;
     }
-    
+
     #leftPanel #accountInfo {
         display: none;
     }
-    
+
     #leftPanel #accountClickArea {
         justify-content: center;
     }
-    
+
     #leftPanel #statsBtn .label {
         display: none;
     }
-    
+
     #leftPanel #statsBtn {
         padding: 0;
         justify-content: center;
@@ -1994,56 +2029,56 @@ select option {
         transform: translateX(0);
         transition: transform 0.3s ease;
     }
-    
+
     #chatPanel.hidden {
         transform: translateX(100%);
         width: 300px;
         min-width: 300px;
     }
-    
+
     #toggleChatBtn {
         right: 308px;
     }
-    
+
     #toggleChatBtn.chat-hidden {
         right: 12px;
     }
-    
+
     #menuPanel {
         max-width: 100%;
         border-left: none;
         border-right: none;
     }
-    
+
     #controlsPanel {
         flex-wrap: wrap;
         height: auto;
         gap: 16px;
     }
-    
+
     .stats-overview {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .stats-game-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .modal-content {
         width: 95vw;
         padding: 16px;
     }
-    
+
     .modal-content.wide {
         width: 95vw;
     }
-    
+
     .lobby-code-value {
         font-size: 24px;
         letter-spacing: 4px;
     }
-    
+
     #menuHeader h1 {
         font-size: 22px;
         letter-spacing: 4px;
@@ -2123,10 +2158,13 @@ select:disabled {
 
 /* ========== WINNER ANIMATION ========== */
 @keyframes winnerPulse {
-    0%, 100% { 
+
+    0%,
+    100% {
         text-shadow: 0 0 10px currentColor;
     }
-    50% { 
+
+    50% {
         text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
     }
 }
@@ -2137,11 +2175,12 @@ select:disabled {
 
 /* ========== BALL POCKET ANIMATION ========== */
 @keyframes ballPocket {
-    0% { 
+    0% {
         transform: scale(1);
         opacity: 1;
     }
-    100% { 
+
+    100% {
         transform: scale(0);
         opacity: 0;
     }
@@ -2224,8 +2263,15 @@ select:disabled {
 }
 
 @keyframes notificationPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
 }
 
 /* ========== KEYBOARD HINT ========== */
@@ -2291,7 +2337,7 @@ select:disabled {
         background: white;
         color: black;
     }
-    
+
     #leftPanel,
     #chatPanel,
     #toggleChatBtn,
@@ -2300,7 +2346,7 @@ select:disabled {
     #connectionStatus {
         display: none !important;
     }
-    
+
     #mainArea {
         width: 100%;
     }
@@ -2308,6 +2354,7 @@ select:disabled {
 
 /* ========== REDUCED MOTION ========== */
 @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -2325,11 +2372,11 @@ select:disabled {
         --text-muted: #888;
         --text-dim: #bbb;
     }
-    
+
     button {
         border-width: 2px;
     }
-    
+
     input,
     select {
         border-width: 2px;
@@ -2631,4 +2678,135 @@ select:disabled {
 
 .match-item .match-info .match-rating {
     color: var(--text-dim);
+}
+
+/* ========== SPIN CONTROL ========== */
+.spin-control-group {
+    position: relative;
+}
+
+#spinControl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#spinBall {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #ddd);
+    border: 2px solid var(--border-light);
+    position: relative;
+    cursor: crosshair;
+    box-shadow:
+        inset -3px -3px 8px rgba(0, 0, 0, 0.2),
+        2px 2px 8px rgba(0, 0, 0, 0.3);
+    transition: border-color 0.2s;
+}
+
+#spinBall:hover {
+    border-color: var(--accent-green);
+}
+
+#spinBall.active {
+    border-color: var(--accent-green);
+    box-shadow:
+        inset -3px -3px 8px rgba(0, 0, 0, 0.2),
+        2px 2px 8px rgba(0, 0, 0, 0.3),
+        0 0 10px var(--accent-green);
+}
+
+#spinCrosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#spinCrosshair::before,
+#spinCrosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+#spinCrosshair::before {
+    width: 1px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+}
+
+#spinCrosshair::after {
+    height: 1px;
+    width: 100%;
+    top: 50%;
+    left: 0;
+}
+
+#spinDot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--accent-red);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s ease-out;
+}
+
+#spinDot.active {
+    background: var(--accent-green);
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+#spinInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10px;
+    color: var(--text-muted);
+    min-width: 50px;
+}
+
+#spinInfo span {
+    font-family: monospace;
+}
+
+#spinXValue::before {
+    content: 'X: ';
+    color: var(--accent-blue);
+}
+
+#spinYValue::before {
+    content: 'Y: ';
+    color: var(--accent-red);
+}
+
+#resetSpinBtn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 14px;
+    border-radius: 50%;
+}
+
+@media (max-width: 800px) {
+    #spinBall {
+        width: 50px;
+        height: 50px;
+    }
+
+    #spinDot {
+        width: 10px;
+        height: 10px;
+    }
 }

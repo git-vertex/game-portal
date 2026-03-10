@@ -54,8 +54,8 @@ function loadAccount() {
     loadStats(); updateAccountDisplay();
 }
 
-function loadStats() { 
-    const saved = localStorage.getItem('playerStats'); 
+function loadStats() {
+    const saved = localStorage.getItem('playerStats');
     if (saved) {
         playerStats = JSON.parse(saved);
         if (!playerStats.billiard) playerStats.billiard = { games: 0, wins: 0, frp: 0 };
@@ -179,7 +179,7 @@ async function saveProfile() {
     }
 }
 
-async function logout() { 
+async function logout() {
     // Удаляем ВСЁ из Firebase
     if (db && firebaseReady && currentNickname) {
         const username = currentNickname.toLowerCase();
@@ -189,16 +189,16 @@ async function logout() {
         const snapshot = await db.ref('users').once('value');
         // Пользователь уже удалён, лидерборд обновится автоматически
     }
-    
-    isLoggedIn = false; 
-    currentNickname = ''; 
-    currentAvatar = ''; 
+
+    isLoggedIn = false;
+    currentNickname = '';
+    currentAvatar = '';
     playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
-    localStorage.removeItem('billiardAccount'); 
+    localStorage.removeItem('billiardAccount');
     localStorage.removeItem('playerStats');
-    updateAccountDisplay(); 
-    closeAuthModal(); 
-    
+    updateAccountDisplay();
+    closeAuthModal();
+
     // Перезагружаем лидерборд
     loadLeaderboard();
 }
@@ -305,7 +305,7 @@ function joinLobby() {
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
 
-            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 };lobbyRef.child('players').set(playersInfo);
+            playersInfo[myPlayer] = { nick: myNickname, sessionId: mySessionId, avatar: getAvatar(), frp: playerStats[currentGame]?.frp || 0 }; lobbyRef.child('players').set(playersInfo);
             document.querySelector('[data-tab="create"]').click();
             showLobbyUI();
             document.getElementById('lobbyCode').textContent = lobbyCode;
@@ -318,18 +318,18 @@ function joinLobby() {
 }
 
 function setupLobbyListeners() {
-        lobbyRef.child('players').on('value', snapshot => {
-    const newPlayersInfo = snapshot.val() || {};
-    if (Object.keys(newPlayersInfo).length === 0 && !isHost) { leaveLobby(); return; }
-    const playerCount = Object.keys(newPlayersInfo).length;
-    const startBtn = document.getElementById('startGameBtn');
-    if (startBtn) { 
-        startBtn.disabled = playerCount < 2;
-        if (isHost) {
-            startBtn.style.display = '';
+    lobbyRef.child('players').on('value', snapshot => {
+        const newPlayersInfo = snapshot.val() || {};
+        if (Object.keys(newPlayersInfo).length === 0 && !isHost) { leaveLobby(); return; }
+        const playerCount = Object.keys(newPlayersInfo).length;
+        const startBtn = document.getElementById('startGameBtn');
+        if (startBtn) {
+            startBtn.disabled = playerCount < 2;
+            if (isHost) {
+                startBtn.style.display = '';
+            }
         }
-    }
-    if (gameStarted) {
+        if (gameStarted) {
             const currentIds = new Set(Object.values(newPlayersInfo).map(p => p.sessionId));
             for (const [num, info] of Object.entries(playersInfo)) { if (!currentIds.has(info.sessionId)) disconnectedPlayers.add(parseInt(num)); }
             if (disconnectedPlayers.size > 0) document.getElementById('gameContent').classList.add('game-ended');
@@ -355,7 +355,12 @@ function setupPlayerListeners() {
     setupLobbyListeners();
     if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
-        lobbyRef.child('shot').on('value', snapshot => { const shot = snapshot.val(); if (shot && shot.player !== myPlayer && !gameState?.isMoving) performShot(shot.vx, shot.vy); });
+        lobbyRef.child('shot').on('value', snapshot => {
+            const shot = snapshot.val();
+            if (shot && shot.player !== myPlayer && !gameState?.isMoving) {
+                performShot(shot.vx, shot.vy, shot.spinX || 0, shot.spinY || 0);
+            }
+        });
         lobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
     } else {
         lobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
@@ -498,9 +503,9 @@ document.querySelectorAll('.stats-tab').forEach(tab => {
         const tabName = tab.dataset.stats;
         const contentId = 'stats' + tabName.charAt(0).toUpperCase() + tabName.slice(1);
         document.getElementById(contentId).classList.add('active');
-    if (tabName === 'leaderboard') {
-        loadLeaderboard();
-    }
+        if (tabName === 'leaderboard') {
+            loadLeaderboard();
+        }
     });
 });
 
@@ -524,10 +529,10 @@ document.getElementById('copyBtn').addEventListener('click', () => {
 document.getElementById('joinCode').addEventListener('keypress', e => { if (e.key === 'Enter') joinLobby(); });
 
 document.getElementById('chatInput').addEventListener('keypress', e => {
-    if (e.key === 'Enter') { 
+    if (e.key === 'Enter') {
         if (!isLoggedIn) { alert('Войдите в аккаунт чтобы писать в чат'); return; }
-        const text = document.getElementById('chatInput').value.trim(); 
-        if (text) { sendGlobalChat(text); document.getElementById('chatInput').value = ''; } 
+        const text = document.getElementById('chatInput').value.trim();
+        if (text) { sendGlobalChat(text); document.getElementById('chatInput').value = ''; }
     }
 });
 

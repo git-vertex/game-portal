@@ -37,9 +37,9 @@ function startTurnTimer() {
 }
 
 function stopTurnTimer() {
-    if (turnTimerInterval) { 
-        clearInterval(turnTimerInterval); 
-        turnTimerInterval = null; 
+    if (turnTimerInterval) {
+        clearInterval(turnTimerInterval);
+        turnTimerInterval = null;
     }
 }
 
@@ -86,36 +86,36 @@ function updateViewersCount() {
 function updatePlayersList() {
     const container = document.getElementById('playersList');
     if (!container) return;
-    
+
     container.innerHTML = '';
-    
+
     const table = document.createElement('table');
     table.className = 'players-table';
-    
+
     const thead = document.createElement('thead');
     thead.innerHTML = `<tr><th style="width: 50%;">Игрок</th><th style="width: 25%;">Рейтинг</th><th style="width: 25%;">Статус</th></tr>`;
     table.appendChild(thead);
-    
+
     const tbody = document.createElement('tbody');
-    
+
     for (const [num, info] of Object.entries(playersInfo)) {
         const color = PLAYER_COLORS[parseInt(num) - 1];
         const isMe = info.sessionId === mySessionId;
         const isHostPlayer = parseInt(num) === 1;
-        
+
         const row = document.createElement('tr');
-        
-        const avatarHtml = info.avatar 
-            ? `<img src="${info.avatar}" alt="">` 
+
+        const avatarHtml = info.avatar
+            ? `<img src="${info.avatar}" alt="">`
             : `<svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-        
+
         let badges = '';
         if (isHostPlayer) badges += '<span class="badge badge-host">ХОСТ</span>';
         if (isMe) badges += '<span class="badge badge-you">ВЫ</span>';
-        
+
         const isCurrentUser = info.sessionId === mySessionId;
         const rating = isCurrentUser ? (playerStats[currentGame]?.frp || 0) : (info.frp || 0);
-        
+
         row.innerHTML = `
             <td>
                 <div class="player-cell">
@@ -131,7 +131,7 @@ function updatePlayersList() {
         `;
         tbody.appendChild(row);
     }
-    
+
     // Пустые слоты
     const count = Object.keys(playersInfo).length;
     for (let i = count; i < maxPlayers; i++) {
@@ -155,34 +155,34 @@ function updatePlayersList() {
         `;
         tbody.appendChild(row);
     }
-    
+
     table.appendChild(tbody);
     container.appendChild(table);
-    
+
     document.getElementById('status').textContent = `Игроки: ${count}/${maxPlayers}`;
     document.getElementById('startGameBtn').disabled = count < 2 && !isBotMode;
-    
+
     updatePublicLobby();
 }
 
 function createScorePanels() {
     const panel = document.getElementById('scorePanel');
     if (!panel) return;
-    
+
     panel.innerHTML = '';
-    
+
     for (let i = 1; i <= gameState.totalPlayers; i++) {
         const div = document.createElement('div');
         div.className = 'playerPanel';
         div.id = `player${i}Panel`;
         div.style.setProperty('--player-color', PLAYER_COLORS[i - 1]);
-        
+
         const isMe = isOnline && i === myPlayer && !isSpectator;
         const nick = gameState.playerNicks[i] || `Игрок ${i}`;
-        
+
         div.innerHTML = `
             <div class="playerHeader">
-                <span class="playerNick" style="color:${PLAYER_COLORS[i-1]}">${nick}</span>
+                <span class="playerNick" style="color:${PLAYER_COLORS[i - 1]}">${nick}</span>
                 ${isMe ? '<span class="playerYou">вы</span>' : ''}
                 <span class="playerDisconnected" id="p${i}Disconnected" style="display:none;">ВЫШЕЛ</span>
             </div>
@@ -200,23 +200,23 @@ function updateScorePanel() {
     for (let i = 1; i <= gameState.totalPlayers; i++) {
         const panel = document.getElementById(`player${i}Panel`);
         if (!panel) continue;
-        
+
         const typeEl = document.getElementById(`p${i}Type`);
         const ballsEl = document.getElementById(`p${i}Balls`);
         const disconnectedEl = document.getElementById(`p${i}Disconnected`);
-        
+
         const pType = gameState.playerTypes[i];
         if (typeEl) {
-                    const typeNames = {
+            const typeNames = {
                 'solid': 'Сплошные',
-                'stripe': 'Полосатые', 
+                'stripe': 'Полосатые',
                 'dot': 'Точечные',
                 'ring': 'Кольцевые',
                 'half': 'Половинчатые',
                 'diamond': 'Ромбовые'
             };
             typeEl.textContent = pType ? (typeNames[pType] || pType) : '-';
-            
+
             const iconCanvas = document.getElementById(`p${i}TypeIcon`);
             if (iconCanvas && pType) {
                 iconCanvas.style.display = 'inline-block';
@@ -225,7 +225,7 @@ function updateScorePanel() {
                 iconCanvas.style.display = 'none';
             }
         }
-        
+
         if (ballsEl) {
             ballsEl.innerHTML = '';
             (gameState.playerPocketed[i] || []).forEach(num => {
@@ -238,9 +238,9 @@ function updateScorePanel() {
                 ballsEl.appendChild(ball);
             });
         }
-        
+
         panel.classList.toggle('active', gameState.currentPlayer === i);
-        
+
         const isDisconnected = disconnectedPlayers.has(i);
         panel.classList.toggle('disconnected', isDisconnected);
         if (disconnectedEl) {
@@ -254,20 +254,20 @@ function drawBallTypeIcon(canvas, type) {
     const r = 8;
     const cx = size / 2;
     const cy = size / 2;
-    
+
     ctx.clearRect(0, 0, size, size);
-    
+
     // Базовый шар
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = '#e67e22';
     ctx.fill();
-    
+
     // Тип
     ctx.fillStyle = '#fff';
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1.5;
-    
+
     if (type === 'stripe') {
         ctx.fillRect(cx - r, cy - 2, r * 2, 4);
     } else if (type === 'dot') {
@@ -307,18 +307,18 @@ function toggleLeftPanel() {
 function toggleChat() {
     const chatPanel = document.getElementById('chatPanel');
     const toggleBtn = document.getElementById('toggleChatBtn');
-    
+
     chatPanel.classList.toggle('hidden');
     toggleBtn.classList.toggle('chat-hidden');
 }
 
 function openStatsModal() {
     document.getElementById('statsModal').classList.add('show');
-    
+
     // Для гостей показываем только лидерборд
     const statsTabs = document.querySelectorAll('.stats-tab');
     const statsContents = document.querySelectorAll('.stats-content');
-    
+
     if (!isLoggedIn) {
         statsTabs.forEach(tab => {
             if (tab.dataset.stats !== 'leaderboard') {
@@ -354,29 +354,29 @@ function updateStatsDisplay() {
     // Диаграмма винрейта
     const circumference = 2 * Math.PI * 54;
     const offset = circumference - (winRate / 100) * circumference;
-    
+
     const chartFill = document.getElementById('statsChartFill');
     if (chartFill) {
         chartFill.style.strokeDasharray = circumference;
         chartFill.style.strokeDashoffset = offset;
     }
-    
+
     const winrateEl = document.getElementById('statsWinrateValue');
     if (winrateEl) winrateEl.textContent = winRate + '%';
-    
+
     const totalGamesEl = document.getElementById('statsTotalGames');
     if (totalGamesEl) totalGamesEl.textContent = totalGames;
-    
+
     const totalWinsEl = document.getElementById('statsTotalWins');
     if (totalWinsEl) totalWinsEl.textContent = totalWins;
-    
+
     const totalLossesEl = document.getElementById('statsTotalLosses');
     if (totalLossesEl) totalLossesEl.textContent = totalGames - totalWins;
-    
+
     const ratingEl = document.getElementById('statsRatingValue');
     if (ratingEl) ratingEl.textContent = totalRating;
-    
-        // Статистика по играм
+
+    // Статистика по играм
     document.getElementById('billiardGames').textContent = playerStats.billiard?.games || 0;
     document.getElementById('billiardWins').textContent = playerStats.billiard?.wins || 0;
     document.getElementById('billiardRating').textContent = playerStats.billiard?.frp || 0;
@@ -389,10 +389,10 @@ function updateGameCharts() {
     // Бильярд
     const billiardGames = playerStats.billiard?.games || 0;
     const billiardWins = playerStats.billiard?.wins || 0;
-    const billiardWinRate = billiardGames > 0 
-        ? Math.round((billiardWins / billiardGames) * 100) 
+    const billiardWinRate = billiardGames > 0
+        ? Math.round((billiardWins / billiardGames) * 100)
         : 0;
-    
+
     const billiardBar = document.getElementById('billiardWinBar');
     if (billiardBar) {
         billiardBar.style.width = billiardWinRate + '%';
@@ -414,28 +414,28 @@ function setHistorySort(mode) {
 function updateMatchHistory() {
     const historyContainer = document.getElementById('matchHistory');
     if (!historyContainer) return;
-    
-    if (!playerStats.history || playerStats.history.length === 0) { 
-        historyContainer.innerHTML = '<div class="noServers">Нет истории матчей</div>'; 
-        return; 
+
+    if (!playerStats.history || playerStats.history.length === 0) {
+        historyContainer.innerHTML = '<div class="noServers">Нет истории матчей</div>';
+        return;
     }
-    
+
     let sorted = [...playerStats.history];
     switch (historySortMode) {
         case 'wins': sorted = sorted.filter(m => m.won); break;
         case 'losses': sorted = sorted.filter(m => !m.won); break;
     }
-    
-    if (sorted.length === 0) { 
-        historyContainer.innerHTML = `<div class="noServers">Нет ${historySortMode === 'wins' ? 'побед' : 'поражений'}</div>`; 
-        return; 
+
+    if (sorted.length === 0) {
+        historyContainer.innerHTML = `<div class="noServers">Нет ${historySortMode === 'wins' ? 'побед' : 'поражений'}</div>`;
+        return;
     }
-    
+
     historyContainer.innerHTML = '';
     sorted.slice(0, 20).forEach((match) => {
         const date = new Date(match.date);
         const dateStr = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        
+
         const item = document.createElement('div');
         item.className = 'match-item';
         item.innerHTML = `
@@ -453,11 +453,11 @@ function updateMatchHistory() {
 // Лидерборд
 async function loadLeaderboard() {
     if (!db || !firebaseReady) return;
-    
+
     try {
         const snapshot = await db.ref('users').orderByChild('stats/billiard/frp').limitToLast(50).once('value');
         const users = snapshot.val() || {};
-        
+
         leaderboardData = [];
         for (const [key, user] of Object.entries(users)) {
             const totalRating = user.stats?.billiard?.frp || 0;
@@ -470,7 +470,7 @@ async function loadLeaderboard() {
                 wins: (user.stats?.billiard?.wins || 0) + (user.stats?.pong?.wins || 0)
             });
         }
-        
+
         leaderboardData.sort((a, b) => b.rating - a.rating);
         updateLeaderboardDisplay();
     } catch (e) {
@@ -481,24 +481,24 @@ async function loadLeaderboard() {
 function updateLeaderboardDisplay() {
     const container = document.getElementById('leaderboardList');
     if (!container) return;
-    
+
     if (leaderboardData.length === 0) {
         container.innerHTML = '<div class="noServers">Нет данных</div>';
         return;
     }
-    
+
     container.innerHTML = '';
-    
+
     leaderboardData.slice(0, 20).forEach((player, index) => {
         const item = document.createElement('div');
         item.className = 'leaderboard-item' + (player.nickname === currentNickname ? ' is-me' : '');
-        
-        const avatarHtml = player.avatar 
-            ? `<img src="${player.avatar}" alt="">` 
+
+        const avatarHtml = player.avatar
+            ? `<img src="${player.avatar}" alt="">`
             : `<svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-        
+
         const flagEmoji = getCountryFlag(player.country);
-        
+
         item.innerHTML = `
             <div class="lb-rank">${index + 1}</div>
             <div class="lb-avatar">${avatarHtml}</div>
@@ -518,7 +518,7 @@ function updateLeaderboardDisplay() {
 function getCountryFlag(countryCode) {
     const code = countryCode.toUpperCase();
     if (code.length !== 2) return '';
-    
+
     // Преобразуем буквы в региональные индикаторы
     const offset = 127397;
     const chars = [...code].map(c => String.fromCodePoint(c.charCodeAt(0) + offset));
@@ -530,13 +530,13 @@ function recordMatch(game, won, pocketedCount = 0) {
     if (isBotMode) return;
     if (!isLoggedIn) return;
     if (!playerStats[game]) playerStats[game] = { games: 0, wins: 0, frp: 0 };
-    
+
     playerStats[game].games++;
     if (won) playerStats[game].wins++;
-    
+
     let ratingChange;
     const maxBalls = game === 'billiard' ? 7 : 5;
-    
+
     if (won) {
         const baseWin = 15;
         const maxBonus = 20;
@@ -548,9 +548,9 @@ function recordMatch(game, won, pocketedCount = 0) {
         const reduction = Math.round((pocketedCount / maxBalls) * maxReduction);
         ratingChange = baseLoss + reduction;
     }
-    
+
     playerStats[game].frp = Math.max(0, playerStats[game].frp + ratingChange);
-    
+
     // Определяем оппонента
     let opponent = 'Unknown';
     if (game === 'billiard' && gameState) {
@@ -560,23 +560,139 @@ function recordMatch(game, won, pocketedCount = 0) {
         const oppPlayer = myPlayer === 1 ? 2 : 1;
         opponent = pongState.playerNicks[oppPlayer] || 'Unknown';
     }
-    
+
     playerStats.history.unshift({
-        game, 
-        won, 
+        game,
+        won,
         date: Date.now(),
         opponent,
         ratingChange,
         pocketed: pocketedCount
     });
-    
+
     if (playerStats.history.length > 50) {
         playerStats.history = playerStats.history.slice(0, 50);
     }
-    
+
     saveStats();
-    
+
     if (db && firebaseReady && isLoggedIn) {
         db.ref('users/' + currentNickname.toLowerCase() + '/stats').set(playerStats);
     }
 }
+
+// ========== SPIN CONTROL ==========
+
+function initSpinControl() {
+    const spinBall = document.getElementById('spinBall');
+    const spinDot = document.getElementById('spinDot');
+    const resetBtn = document.getElementById('resetSpinBtn');
+
+    if (!spinBall) return;
+
+    spinBall.addEventListener('mousedown', startSpinDrag);
+    spinBall.addEventListener('touchstart', startSpinDrag, { passive: false });
+
+    document.addEventListener('mousemove', dragSpin);
+    document.addEventListener('touchmove', dragSpin, { passive: false });
+
+    document.addEventListener('mouseup', endSpinDrag);
+    document.addEventListener('touchend', endSpinDrag);
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetSpin);
+    }
+}
+
+function startSpinDrag(e) {
+    if (!isMyTurn() || gameState?.isMoving) return;
+
+    e.preventDefault();
+    isSettingSpin = true;
+
+    const spinBall = document.getElementById('spinBall');
+    const spinDot = document.getElementById('spinDot');
+    if (spinBall) spinBall.classList.add('active');
+    if (spinDot) spinDot.classList.add('active');
+
+    updateSpinFromEvent(e);
+}
+
+function dragSpin(e) {
+    if (!isSettingSpin) return;
+    e.preventDefault();
+    updateSpinFromEvent(e);
+}
+
+function endSpinDrag() {
+    if (!isSettingSpin) return;
+
+    isSettingSpin = false;
+
+    const spinBall = document.getElementById('spinBall');
+    const spinDot = document.getElementById('spinDot');
+    if (spinBall) spinBall.classList.remove('active');
+    if (spinDot) spinDot.classList.remove('active');
+}
+
+function updateSpinFromEvent(e) {
+    const spinBall = document.getElementById('spinBall');
+    if (!spinBall) return;
+
+    const rect = spinBall.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let clientX, clientY;
+    if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+
+    let spinX = (clientX - centerX) / (rect.width / 2);
+    let spinY = -(clientY - centerY) / (rect.height / 2);
+
+    // Clamp to circle
+    const dist = Math.sqrt(spinX * spinX + spinY * spinY);
+    if (dist > 1) {
+        spinX /= dist;
+        spinY /= dist;
+    }
+
+    cueSpin.x = Math.max(-MAX_SPIN, Math.min(MAX_SPIN, spinX));
+    cueSpin.y = Math.max(-MAX_SPIN, Math.min(MAX_SPIN, spinY));
+
+    updateSpinDisplay();
+}
+
+function updateSpinDisplay() {
+    const spinDot = document.getElementById('spinDot');
+    if (!spinDot) return;
+
+    const offsetX = cueSpin.x * 24;
+    const offsetY = -cueSpin.y * 24;
+
+    spinDot.style.left = `calc(50% + ${offsetX}px)`;
+    spinDot.style.top = `calc(50% + ${offsetY}px)`;
+
+    const spinXEl = document.getElementById('spinXValue');
+    const spinYEl = document.getElementById('spinYValue');
+
+    if (spinXEl) spinXEl.textContent = cueSpin.x.toFixed(2);
+    if (spinYEl) spinYEl.textContent = cueSpin.y.toFixed(2);
+}
+
+function resetSpin() {
+    cueSpin = { x: 0, y: 0 };
+    updateSpinDisplay();
+}
+
+// Initialize when showing game
+const originalShowGame = showGame;
+showGame = function () {
+    originalShowGame();
+    setTimeout(initSpinControl, 100);
+};

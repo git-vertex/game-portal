@@ -50,3 +50,13 @@ const TENNIS = {
     tableColor: '#1a5c2e',
     netHeight: 6
 };
+
+// Spin physics constants
+// Spin physics constants - REALISTIC
+const SPIN_FRICTION = 0.994;           // Как быстро spin угасает (медленнее = дольше крутится)
+const SPIN_TRANSFER = 0.25;            // Сколько spin передаётся при столкновении
+const SPIN_TO_VELOCITY = 0.12;         // Конверсия spin в скорость при откате
+const MAX_SPIN = 1.0;                  // Максимальное значение spin
+const SPIN_CURVE_FACTOR = 0.06;        // Как сильно side spin искривляет траекторию
+const TOPSPIN_ACCELERATION = 0.025;    // Ускорение при top spin
+const BACKSPIN_GRIP_SPEED = 0.5;       // Скорость при которой backspin "цепляет" сукно
