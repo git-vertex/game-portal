@@ -58,21 +58,36 @@ function switchGame(game) {
     if (game === 'billiard') {
         document.getElementById('billiardBtn').classList.add('active');
         document.getElementById('gameTitle').textContent = 'БИЛЬЯРД';
-        document.getElementById('playerCount').parentElement.style.display = '';
+        document.getElementById('playerCount').style.display = '';
     } else if (game === 'checkers') {
         document.getElementById('checkersBtn').classList.add('active');
         document.getElementById('gameTitle').textContent = 'ШАШКИ';
-        document.getElementById('playerCount').parentElement.style.display = 'none';
+        document.getElementById('playerCount').style.display = 'none';
     }
     loadPublicServers();
 }
 function showMenu() {
-    document.getElementById('menuPanel').style.display = 'flex';
-    document.getElementById('gameArea').style.display = 'none';
-    document.getElementById('checkersArea').style.display = 'none';
-    document.getElementById('gameControls').style.display = 'none';
-    document.getElementById('lobbyInfo').style.display = 'none';
-    document.getElementById('createSection').style.display = 'block';
+    const menuPanel = document.getElementById('menuPanel');
+    const gameArea = document.getElementById('gameArea');
+    const checkersArea = document.getElementById('checkersArea');
+    
+    gameArea.style.opacity = '0';
+    checkersArea.style.opacity = '0';
+    
+    setTimeout(() => {
+        gameArea.style.display = 'none';
+        checkersArea.style.display = 'none';
+        document.getElementById('gameControls').style.display = 'none';
+        document.getElementById('lobbyInfo').style.display = 'none';
+        document.getElementById('createSection').style.display = 'block';
+        
+        menuPanel.style.display = 'flex';
+        menuPanel.style.opacity = '0';
+        setTimeout(() => {
+            menuPanel.style.opacity = '1';
+        }, 50);
+    }, 150);
+    
     gameStarted = false;
     startAutoRefresh();
 }
@@ -83,14 +98,33 @@ function showLobbyUI() {
 }
 
 function showGame() {
-    document.getElementById('menuPanel').style.display = 'none';
-    document.getElementById('gameControls').style.display = 'block';
+    const menuPanel = document.getElementById('menuPanel');
+    const gameControls = document.getElementById('gameControls');
+    const gameArea = document.getElementById('gameArea');
+    const checkersArea = document.getElementById('checkersArea');
+    
+    menuPanel.style.opacity = '0';
+    setTimeout(() => {
+        menuPanel.style.display = 'none';
+        menuPanel.style.opacity = '1';
+    }, 150);
+    
+    gameControls.style.display = 'block';
+    
     if (currentGame === 'checkers') {
-        document.getElementById('gameArea').style.display = 'none';
-        document.getElementById('checkersArea').style.display = 'flex';
+        gameArea.style.display = 'none';
+        checkersArea.style.display = 'flex';
+        checkersArea.style.opacity = '0';
+        setTimeout(() => {
+            checkersArea.style.opacity = '1';
+        }, 50);
     } else {
-        document.getElementById('gameArea').style.display = 'flex';
-        document.getElementById('checkersArea').style.display = 'none';
+        checkersArea.style.display = 'none';
+        gameArea.style.display = 'flex';
+        gameArea.style.opacity = '0';
+        setTimeout(() => {
+            gameArea.style.opacity = '1';
+        }, 50);
     }
 }
 

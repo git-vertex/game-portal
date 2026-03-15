@@ -336,7 +336,7 @@ function botCheckersMove() {
             if (piece && piece.player === 2) {
                 const moves = getValidMoves(row, col);
                 for (const move of moves) {
-                    allMoves.push({ from: { row, col }, to: move });
+                    allMoves.push({ from: { row, col }, to: move, piece });
                 }
             }
         }
@@ -351,12 +351,59 @@ function botCheckersMove() {
         return;
     }
     
-    const randomMove = movesToUse[Math.floor(Math.random() * movesToUse.length)];
+    // Умный выбор хода
+    let bestMove = null;
+    let bestScore = -9999;
     
-    checkersState.selectedPiece = randomMove.from;
-    checkersState.validMoves = [randomMove.to];
+    for (const move of movesToUse) {
+        let score = 0;
+        
+        // Взятие - приоритет
+        if (move.to.isCapture) {
+            score += 100;
+        }
+        
+        // Продвижение к дамке (ближе к краю)
+        if (!move.piece.isKing) {
+            score += move.to.row * 5; // Чем ближе к низу, тем лучше для чёрных
+        }
+        
+        // Бонус за становление дамкой
+        if (move.to.row === 7 && !move.piece.isKing) {
+            score += 80;
+        }
+        
+        // Держаться центра
+        const centerDist = Math.abs(3.5 - move.to.col);
+        score -= centerDist * 3;
+        
+        // Защита задней линии в начале
+        if (move.from.row === 0 && !move.piece.isKing) {
+            score -= 20;
+        }
+        
+        // Дамки ценнее - двигать активнее
+        if (move.piece.isKing) {
+            score += 15;
+        }
+        
+        // Небольшая случайность
+        score += Math.random() * 10;
+        
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+        }
+    }
     
-    makeCheckersMove(randomMove.to);
+    if (!bestMove) {
+        bestMove = movesToUse[Math.floor(Math.random() * movesToUse.length)];
+    }
+    
+    checkersState.selectedPiece = bestMove.from;
+    checkersState.validMoves = [bestMove.to];
+    
+    makeCheckersMove(bestMove.to);
 }
 
 function isMyTurnCheckers() {
