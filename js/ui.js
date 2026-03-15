@@ -55,15 +55,21 @@ function switchGame(game) {
     if (gameStarted || lobbyCode) return;
     currentGame = game;
     document.querySelectorAll('.gameBtn').forEach(b => b.classList.remove('active'));
-    document.getElementById(game === 'billiard' ? 'billiardBtn' : 'backgammonBtn')?.classList.add('active');
-    document.getElementById('gameTitle').textContent = game === 'billiard' ? 'БИЛЬЯРД' : 'НАРДЫ';
-    document.getElementById('gameSubtitle').textContent = 'Многопользовательская онлайн игра';
+    if (game === 'billiard') {
+        document.getElementById('billiardBtn').classList.add('active');
+        document.getElementById('gameTitle').textContent = 'БИЛЬЯРД';
+        document.getElementById('playerCount').parentElement.style.display = '';
+    } else if (game === 'backgammon') {
+        document.getElementById('backgammonBtn').classList.add('active');
+        document.getElementById('gameTitle').textContent = 'НАРДЫ';
+        document.getElementById('playerCount').parentElement.style.display = 'none';
+    }
     loadPublicServers();
 }
-
 function showMenu() {
     document.getElementById('menuPanel').style.display = 'flex';
     document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('backgammonArea').style.display = 'none';
     document.getElementById('backgammonArea').style.display = 'none';
     document.getElementById('gameControls').style.display = 'none';
     document.getElementById('lobbyInfo').style.display = 'none';
@@ -80,12 +86,12 @@ function showLobbyUI() {
 function showGame() {
     document.getElementById('menuPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'block';
-    if (currentGame === 'billiard') {
-        document.getElementById('gameArea').style.display = 'flex';
-        document.getElementById('backgammonArea').style.display = 'none';
-    } else if (currentGame === 'backgammon') {
+    if (currentGame === 'backgammon') {
         document.getElementById('gameArea').style.display = 'none';
         document.getElementById('backgammonArea').style.display = 'flex';
+    } else {
+        document.getElementById('gameArea').style.display = 'flex';
+        document.getElementById('backgammonArea').style.display = 'none';
     }
 }
 

@@ -297,15 +297,20 @@ function joinLobby() {
         if (currentGame !== gameType) {
             currentGame = gameType;
             document.querySelectorAll('.gameBtn').forEach(b => b.classList.remove('active'));
-            document.getElementById(gameType === 'billiard' ? 'billiardBtn' : 'pongBtn')?.classList.add('active');
-            document.getElementById('gameTitle').textContent = gameType === 'billiard' ? 'БИЛЬЯРД' : 'ПИНГ-ПОНГ';
+            if (gameType === 'billiard') {
+                document.getElementById('billiardBtn')?.classList.add('active');
+                document.getElementById('gameTitle').textContent = 'БИЛЬЯРД';
+            } else if (gameType === 'backgammon') {
+                document.getElementById('backgammonBtn')?.classList.add('active');
+                document.getElementById('gameTitle').textContent = 'НАРДЫ';
+            }
         }
         lobbyCode = code;
         lobbyRef = templobbyRef;
         maxPlayers = data.maxPlayers || 2;
         playersInfo = data.players || {};
         const playerCount = Object.keys(playersInfo).length;
-        const gameAlreadyStarted = data.state?.gameStarted || data.pongState?.gameStarted;
+        const gameAlreadyStarted = data.state?.gameStarted || data.pongState?.gameStarted || data.backgammonState?.gameStarted;
         if (playerCount >= maxPlayers || gameAlreadyStarted) {
             isSpectator = true; isOnline = true; myPlayer = 0;
             lobbyRef.child('spectators').transaction(c => (c || 0) + 1);
