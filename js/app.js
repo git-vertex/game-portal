@@ -37,7 +37,7 @@ let chatHidden = false;
 let anglePrecision = 0.6;
 let disconnectedPlayers = new Set();
 let currentGame = 'billiard';
-let backgammonState = null;
+let checkersState = null;
 let currentAvatar = '';
 let currentNickname = '';
 let isLoggedIn = false;
@@ -209,7 +209,7 @@ function resetState() {
     stopTurnTimer();
     if (lobbyRef) { lobbyRef.off(); lobbyRef = null; }
     removePublicLobby();
-    gameState = null; pongState = null; backgammonState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
+    gameState = null; pongState = null; checkersState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
     document.getElementById('foulMessage').textContent = '';
     document.getElementById('spectatorBadge').style.display = 'none';
     document.getElementById('gameContent').classList.remove('game-ended');
@@ -219,7 +219,7 @@ function createLobby() {
     if (!db || !firebaseReady) return;
     resetState();
     myNickname = getNickname();
-    maxPlayers = currentGame === 'backgammon' ? 2 : parseInt(document.getElementById('playerCount').value);
+    maxPlayers = currentGame === 'checkers' ? 2 : parseInt(document.getElementById('playerCount').value);
     isPrivateLobby = document.getElementById('privateLobby').checked;
     lobbyCode = generateCode();
     document.getElementById('lobbyCode').textContent = lobbyCode;
@@ -235,11 +235,11 @@ function createLobby() {
         gameState.playerNicks = { 1: myNickname };
         gameState.playerAvatars = { 1: getAvatar() };
         lobbyRef.set({ state: gameState, maxPlayers, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'billiard', shot: null, aim: null, lastUpdate: Date.now() });
-    } else if (currentGame === 'backgammon') {
-        initBackgammonState();
-        backgammonState.playerNicks = { 1: myNickname };
-        backgammonState.playerAvatars = { 1: getAvatar() };
-        lobbyRef.set({ backgammonState: backgammonState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'backgammon', lastUpdate: Date.now() });
+    } else if (currentGame === 'checkers') {
+        initCheckersState();
+        checkersState.playerNicks = { 1: myNickname };
+        checkersState.playerAvatars = { 1: getAvatar() };
+        lobbyRef.set({ checkersState: checkersState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'checkers', lastUpdate: Date.now() });
     } else {
         initPongState();
         pongState.playerNicks = { 1: myNickname };
@@ -267,13 +267,13 @@ function playWithBot() {
         gameState.currentPlayer = 2;
         initBalls(); startBilliardGame();
         setTimeout(botBilliardMove, 1500);
-    } else if (currentGame === 'backgammon') {
-        initBackgammonState();
-        backgammonState.playerNicks = { 1: myNickname, 2: 'Бот' };
-        backgammonState.playerAvatars = { 1: getAvatar(), 2: '' };
-        backgammonState.gameStarted = true;
-        backgammonState.currentPlayer = 1;
-        startBackgammonGame();
+    } else if (currentGame === 'checkers') {
+        initCheckersState();
+        checkersState.playerNicks = { 1: myNickname, 2: 'Бот' };
+        checkersState.playerAvatars = { 1: getAvatar(), 2: '' };
+        checkersState.gameStarted = true;
+        checkersState.currentPlayer = 1;
+        startCheckersGame();
     } else {
         initPongState();
         pongState.playerNicks = { 1: myNickname, 2: 'Бот' };
@@ -310,7 +310,7 @@ function joinLobby() {
         maxPlayers = data.maxPlayers || 2;
         playersInfo = data.players || {};
         const playerCount = Object.keys(playersInfo).length;
-        const gameAlreadyStarted = data.state?.gameStarted || data.pongState?.gameStarted || data.backgammonState?.gameStarted;
+        const gameAlreadyStarted = data.state?.gameStarted || data.pongState?.gameStarted || data.checkersState?.gameStarted;
         if (playerCount >= maxPlayers || gameAlreadyStarted) {
             isSpectator = true; isOnline = true; myPlayer = 0;
             lobbyRef.child('spectators').transaction(c => (c || 0) + 1);
@@ -318,7 +318,7 @@ function joinLobby() {
             setupSpectatorListeners();
             if (gameAlreadyStarted) {
                 if (data.game === 'billiard' && data.state) { gameState = data.state; startBilliardGame(); }
-                else if (data.game === 'backgammon' && data.backgammonState) { backgammonState = data.backgammonState; startBackgammonGame(); }
+                else if (data.game === 'checkers' && data.checkersState) { checkersState = data.checkersState; startCheckersGame(); }
                 else if (data.pongState) { pongState = data.pongState; startPongGame(); }
             }
         } else {
@@ -369,13 +369,12 @@ function setupLobbyListeners() {
 
 function setupSpectatorListeners() {
     setupLobbyListeners();
-    if (currentGame === 'backgammon') {
-        lobbyRef.child('backgammonState').on('value', snapshot => {
+    if (currentGame === 'checkers') {
+        lobbyRef.child('checkersState').on('value', snapshot => {
             if (!snapshot.val()) return;
-            backgammonState = snapshot.val();
-            if (backgammonState.gameStarted && !gameStarted) startBackgammonGame();
-            updateBackgammonInfo();
-            updateDiceDisplay();
+            checkersState = snapshot.val();
+            if (checkersState.gameStarted && !gameStarted) startCheckersGame();
+            updateCheckersInfo();
         });
     } else if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
@@ -387,13 +386,12 @@ function setupSpectatorListeners() {
 
 function setupPlayerListeners() {
     setupLobbyListeners();
-    if (currentGame === 'backgammon') {
-        lobbyRef.child('backgammonState').on('value', snapshot => {
+    if (currentGame === 'checkers') {
+        lobbyRef.child('checkersState').on('value', snapshot => {
             if (!snapshot.val()) return;
-            backgammonState = snapshot.val();
-            if (backgammonState.gameStarted && !gameStarted) startBackgammonGame();
-            updateBackgammonInfo();
-            updateDiceDisplay();
+            checkersState = snapshot.val();
+            if (checkersState.gameStarted && !gameStarted) startCheckersGame();
+            updateCheckersInfo();
         });
     } else if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
@@ -451,12 +449,12 @@ function startOnlineGame() {
         isOnline = true;
         lobbyRef.child('state').set(gameState);
         updatePublicLobby(); startBilliardGame();
-    } else if (currentGame === 'backgammon') {
-        backgammonState.gameStarted = true;
-        for (const [num, info] of Object.entries(playersInfo)) { backgammonState.playerNicks[num] = info.nick; backgammonState.playerAvatars[num] = info.avatar || ''; }
+    } else if (currentGame === 'checkers') {
+        checkersState.gameStarted = true;
+        for (const [num, info] of Object.entries(playersInfo)) { checkersState.playerNicks[num] = info.nick; checkersState.playerAvatars[num] = info.avatar || ''; }
         isOnline = true;
-        lobbyRef.child('backgammonState').set(backgammonState);
-        updatePublicLobby(); startBackgammonGame();
+        lobbyRef.child('checkersState').set(checkersState);
+        updatePublicLobby(); startCheckersGame();
     } else {
         pongState.gameStarted = true; pongState.paused = false;
         for (const [num, info] of Object.entries(playersInfo)) { pongState.playerNicks[num] = info.nick; pongState.playerAvatars[num] = info.avatar || ''; }
@@ -660,8 +658,8 @@ setTimeout(() => { hideLoading(); }, 5000);
     if (currentGame === 'billiard') {
         updateBilliard();
         drawBilliard();
-    } else if (currentGame === 'backgammon') {
-        drawBackgammon();
+    } else if (currentGame === 'checkers') {
+        drawCheckers();
     }
     requestAnimationFrame(gameLoop);
 })();

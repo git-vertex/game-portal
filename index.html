@@ -45,16 +45,15 @@
                 </span>
                 <span class="label">Бильярд</span>
             </button>
-            <button class="gameBtn" id="backgammonBtn" onclick="switchGame('backgammon')">
+            <button class="gameBtn" id="checkersBtn" onclick="switchGame('checkers')">
                 <span class="icon">
                     <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                        <line x1="12" y1="3" x2="12" y2="21"></line>
-                        <circle cx="8" cy="8" r="2"></circle>
-                        <circle cx="16" cy="16" r="2"></circle>
+                        <circle cx="8" cy="8" r="2.5" fill="currentColor"></circle>
+                        <circle cx="16" cy="16" r="2.5"></circle>
                     </svg>
                 </span>
-                <span class="label">Нарды</span>
+                <span class="label">Шашки</span>
             </button>
         </div>
 
@@ -281,42 +280,35 @@
             </div>
         </div>
 
-        <!-- ========== BACKGAMMON GAME AREA ========== -->
-        <div id="backgammonArea" style="display: none;">
-            <div id="backgammonContent">
-                <div id="backgammonScorePanel">
-                    <div class="playerPanel" id="bgPlayer1Panel" style="--player-color: #22c55e;">
+        <!-- ========== CHECKERS GAME AREA ========== -->
+        <div id="checkersArea" style="display: none;">
+            <div id="checkersContent">
+                <div id="checkersScorePanel">
+                    <div class="playerPanel" id="chkPlayer1Panel" style="--player-color: #22c55e;">
                         <div class="playerHeader">
-                            <span class="playerNick" id="bgPlayer1Nick">Игрок 1</span>
+                            <span class="playerNick" id="chkPlayer1Nick">Игрок 1</span>
+                            <span class="playerYou" id="chkPlayer1You" style="display:none;">вы</span>
                         </div>
                         <div class="playerInfo">
-                            <span class="playerType" id="bgPlayer1Pips">Пипсы: 167</span>
+                            <span class="playerType" id="chkPlayer1Count">Шашек: 12</span>
                         </div>
                     </div>
-                    <div class="playerPanel" id="bgPlayer2Panel" style="--player-color: #3b82f6;">
+                    <div class="playerPanel" id="chkPlayer2Panel" style="--player-color: #3b82f6;">
                         <div class="playerHeader">
-                            <span class="playerNick" id="bgPlayer2Nick">Игрок 2</span>
+                            <span class="playerNick" id="chkPlayer2Nick">Игрок 2</span>
+                            <span class="playerYou" id="chkPlayer2You" style="display:none;">вы</span>
                         </div>
                         <div class="playerInfo">
-                            <span class="playerType" id="bgPlayer2Pips">Пипсы: 167</span>
+                            <span class="playerType" id="chkPlayer2Count">Шашек: 12</span>
                         </div>
                     </div>
                 </div>
-                <div id="backgammonInfo">
-                    <span id="bgSpectatorBadge" style="display:none;">Наблюдатель</span>
-                    <span id="bgTurnTimer">30</span>
-                    <span id="bgInfo">ИГРОК 1</span>
-                    <div id="diceDisplay">
-                        <div class="dice" id="dice1">-</div>
-                        <div class="dice" id="dice2">-</div>
-                    </div>
-                    <button id="rollDiceBtn" class="primary sm">Бросить кости</button>
+                <div id="checkersInfo">
+                    <span id="chkSpectatorBadge" style="display:none;">Наблюдатель</span>
+                    <span id="chkTurnTimer">30</span>
+                    <span id="chkInfo">ИГРОК 1</span>
                 </div>
-                <canvas id="backgammonCanvas" width="800" height="500"></canvas>
-                <div id="backgammonControls">
-                    <button id="bgUndoBtn" class="sm">Отменить ход</button>
-                    <button id="bgConfirmBtn" class="primary sm">Подтвердить</button>
-                </div>
+                <canvas id="checkersCanvas" width="560" height="560"></canvas>
             </div>
         </div>
     </div>
