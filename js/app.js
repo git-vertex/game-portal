@@ -218,7 +218,7 @@ function createLobby() {
     if (!db || !firebaseReady) return;
     resetState();
     myNickname = getNickname();
-    maxPlayers = currentGame === 'checkers' ? 2 : parseInt(document.getElementById('playerCount').value);
+    maxPlayers = parseInt(document.getElementById('playerCount').value);
     isPrivateLobby = document.getElementById('privateLobby').checked;
     lobbyCode = generateCode();
     document.getElementById('lobbyCode').textContent = lobbyCode;

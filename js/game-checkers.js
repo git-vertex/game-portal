@@ -313,8 +313,10 @@ function checkWinner() {
         }
     }
     
-    document.getElementById('chkPlayer1Count').textContent = `Шашек: ${player1Pieces}`;
-    document.getElementById('chkPlayer2Count').textContent = `Шашек: ${player2Pieces}`;
+    const p1El = document.getElementById('chkPlayer1Count');
+    const p2El = document.getElementById('chkPlayer2Count');
+    if (p1El) p1El.textContent = `Шашек: ${player1Pieces}`;
+    if (p2El) p2El.textContent = `Шашек: ${player2Pieces}`;
     
     if (player1Pieces === 0) {
         checkersState.winner = 2;
@@ -426,7 +428,40 @@ function startCheckersGame() {
         document.getElementById('chkSpectatorBadge').style.display = 'block';
     }
     
+    createCheckersScorePanels();
     updateCheckersInfo();
+}
+
+function createCheckersScorePanels() {
+    const panel = document.getElementById('checkersScorePanel');
+    if (!panel) return;
+    
+    panel.innerHTML = '';
+    
+    const totalPlayers = Object.keys(checkersState.playerNicks).length || 2;
+    
+    for (let i = 1; i <= totalPlayers; i++) {
+        const div = document.createElement('div');
+        div.className = 'playerPanel';
+        div.id = `chkPlayer${i}Panel`;
+        div.style.setProperty('--player-color', PLAYER_COLORS[i - 1]);
+        
+        const isMe = isOnline && i === myPlayer && !isSpectator;
+        const nick = checkersState.playerNicks[i] || `Игрок ${i}`;
+        const isPlaying = i <= 2;
+        
+        div.innerHTML = `
+            <div class="playerHeader">
+                <span class="playerNick" style="color:${PLAYER_COLORS[i - 1]}">${nick}</span>
+                ${isMe ? '<span class="playerYou">вы</span>' : ''}
+                ${!isPlaying ? '<span class="playerYou">наблюдает</span>' : ''}
+            </div>
+            <div class="playerInfo">
+                <span class="playerType" id="chkPlayer${i}Count">${isPlaying ? 'Шашек: 12' : ''}</span>
+            </div>
+        `;
+        panel.appendChild(div);
+    }
 }
 
 function updateCheckersInfo() {
@@ -445,15 +480,14 @@ function updateCheckersInfo() {
         el.style.color = PLAYER_COLORS[checkersState.currentPlayer - 1];
     }
     
-    const p1Nick = document.getElementById('chkPlayer1Nick');
-    const p2Nick = document.getElementById('chkPlayer2Nick');
-    if (p1Nick) p1Nick.textContent = checkersState.playerNicks[1] || 'Игрок 1';
-    if (p2Nick) p2Nick.textContent = checkersState.playerNicks[2] || 'Игрок 2';
-    
-    const p1Panel = document.getElementById('chkPlayer1Panel');
-    const p2Panel = document.getElementById('chkPlayer2Panel');
-    if (p1Panel) p1Panel.classList.toggle('active', checkersState.currentPlayer === 1);
-    if (p2Panel) p2Panel.classList.toggle('active', checkersState.currentPlayer === 2);
+    // Обновить все панели игроков
+    const totalPlayers = Object.keys(checkersState.playerNicks).length || 2;
+    for (let i = 1; i <= totalPlayers; i++) {
+        const panel = document.getElementById(`chkPlayer${i}Panel`);
+        if (panel) {
+            panel.classList.toggle('active', checkersState.currentPlayer === i && i <= 2);
+        }
+    }
 }
 
 function syncCheckersState() {

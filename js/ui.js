@@ -62,32 +62,16 @@ function switchGame(game) {
     } else if (game === 'checkers') {
         document.getElementById('checkersBtn').classList.add('active');
         document.getElementById('gameTitle').textContent = 'ШАШКИ';
-        document.getElementById('playerCount').style.display = 'none';
     }
     loadPublicServers();
 }
 function showMenu() {
-    const menuPanel = document.getElementById('menuPanel');
-    const gameArea = document.getElementById('gameArea');
-    const checkersArea = document.getElementById('checkersArea');
-    
-    gameArea.style.opacity = '0';
-    checkersArea.style.opacity = '0';
-    
-    setTimeout(() => {
-        gameArea.style.display = 'none';
-        checkersArea.style.display = 'none';
-        document.getElementById('gameControls').style.display = 'none';
-        document.getElementById('lobbyInfo').style.display = 'none';
-        document.getElementById('createSection').style.display = 'block';
-        
-        menuPanel.style.display = 'flex';
-        menuPanel.style.opacity = '0';
-        setTimeout(() => {
-            menuPanel.style.opacity = '1';
-        }, 50);
-    }, 150);
-    
+    document.getElementById('menuPanel').style.display = 'flex';
+    document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('checkersArea').style.display = 'none';
+    document.getElementById('gameControls').style.display = 'none';
+    document.getElementById('lobbyInfo').style.display = 'none';
+    document.getElementById('createSection').style.display = 'block';
     gameStarted = false;
     startAutoRefresh();
 }
@@ -98,33 +82,14 @@ function showLobbyUI() {
 }
 
 function showGame() {
-    const menuPanel = document.getElementById('menuPanel');
-    const gameControls = document.getElementById('gameControls');
-    const gameArea = document.getElementById('gameArea');
-    const checkersArea = document.getElementById('checkersArea');
-    
-    menuPanel.style.opacity = '0';
-    setTimeout(() => {
-        menuPanel.style.display = 'none';
-        menuPanel.style.opacity = '1';
-    }, 150);
-    
-    gameControls.style.display = 'block';
-    
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameControls').style.display = 'block';
     if (currentGame === 'checkers') {
-        gameArea.style.display = 'none';
-        checkersArea.style.display = 'flex';
-        checkersArea.style.opacity = '0';
-        setTimeout(() => {
-            checkersArea.style.opacity = '1';
-        }, 50);
+        document.getElementById('gameArea').style.display = 'none';
+        document.getElementById('checkersArea').style.display = 'flex';
     } else {
-        checkersArea.style.display = 'none';
-        gameArea.style.display = 'flex';
-        gameArea.style.opacity = '0';
-        setTimeout(() => {
-            gameArea.style.opacity = '1';
-        }, 50);
+        document.getElementById('gameArea').style.display = 'flex';
+        document.getElementById('checkersArea').style.display = 'none';
     }
 }
 
