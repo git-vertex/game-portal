@@ -4,8 +4,6 @@ const CHK_BOARD_SIZE = 560;
 const CHK_CELL_SIZE = 70;
 const CHK_PIECE_R = 28;
 
-let checkersState = null;
-
 function initCheckersState() {
     checkersState = {
         board: [],
