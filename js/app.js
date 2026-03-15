@@ -209,7 +209,7 @@ function resetState() {
     stopTurnTimer();
     if (lobbyRef) { lobbyRef.off(); lobbyRef = null; }
     removePublicLobby();
-    gameState = null; pongState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
+    gameState = null; pongState = null; backgammonState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
     document.getElementById('foulMessage').textContent = '';
     document.getElementById('spectatorBadge').style.display = 'none';
     document.getElementById('gameContent').classList.remove('game-ended');
@@ -219,7 +219,7 @@ function createLobby() {
     if (!db || !firebaseReady) return;
     resetState();
     myNickname = getNickname();
-    maxPlayers = parseInt(document.getElementById('playerCount').value);
+    maxPlayers = currentGame === 'backgammon' ? 2 : parseInt(document.getElementById('playerCount').value);
     isPrivateLobby = document.getElementById('privateLobby').checked;
     lobbyCode = generateCode();
     document.getElementById('lobbyCode').textContent = lobbyCode;
@@ -235,6 +235,11 @@ function createLobby() {
         gameState.playerNicks = { 1: myNickname };
         gameState.playerAvatars = { 1: getAvatar() };
         lobbyRef.set({ state: gameState, maxPlayers, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'billiard', shot: null, aim: null, lastUpdate: Date.now() });
+    } else if (currentGame === 'backgammon') {
+        initBackgammonState();
+        backgammonState.playerNicks = { 1: myNickname };
+        backgammonState.playerAvatars = { 1: getAvatar() };
+        lobbyRef.set({ backgammonState: backgammonState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'backgammon', lastUpdate: Date.now() });
     } else {
         initPongState();
         pongState.playerNicks = { 1: myNickname };
@@ -259,9 +264,16 @@ function playWithBot() {
         gameState.playerNicks = { 1: myNickname, 2: 'Бот' };
         gameState.playerAvatars = { 1: getAvatar(), 2: '' };
         gameState.gameStarted = true;
-        gameState.currentPlayer = 2; // БОТ ХОДИТ ПЕРВЫМ
+        gameState.currentPlayer = 2;
         initBalls(); startBilliardGame();
-        setTimeout(botBilliardMove, 1500); // Бот делает первый ход
+        setTimeout(botBilliardMove, 1500);
+    } else if (currentGame === 'backgammon') {
+        initBackgammonState();
+        backgammonState.playerNicks = { 1: myNickname, 2: 'Бот' };
+        backgammonState.playerAvatars = { 1: getAvatar(), 2: '' };
+        backgammonState.gameStarted = true;
+        backgammonState.currentPlayer = 1;
+        startBackgammonGame();
     } else {
         initPongState();
         pongState.playerNicks = { 1: myNickname, 2: 'Бот' };
@@ -301,6 +313,7 @@ function joinLobby() {
             setupSpectatorListeners();
             if (gameAlreadyStarted) {
                 if (data.game === 'billiard' && data.state) { gameState = data.state; startBilliardGame(); }
+                else if (data.game === 'backgammon' && data.backgammonState) { backgammonState = data.backgammonState; startBackgammonGame(); }
                 else if (data.pongState) { pongState = data.pongState; startPongGame(); }
             }
         } else {
@@ -351,7 +364,15 @@ function setupLobbyListeners() {
 
 function setupSpectatorListeners() {
     setupLobbyListeners();
-    if (currentGame === 'billiard') {
+    if (currentGame === 'backgammon') {
+        lobbyRef.child('backgammonState').on('value', snapshot => {
+            if (!snapshot.val()) return;
+            backgammonState = snapshot.val();
+            if (backgammonState.gameStarted && !gameStarted) startBackgammonGame();
+            updateBackgammonInfo();
+            updateDiceDisplay();
+        });
+    } else if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
         lobbyRef.child('aim').on('value', snapshot => { opponentAim = snapshot.val(); });
     } else {
@@ -361,7 +382,15 @@ function setupSpectatorListeners() {
 
 function setupPlayerListeners() {
     setupLobbyListeners();
-    if (currentGame === 'billiard') {
+    if (currentGame === 'backgammon') {
+        lobbyRef.child('backgammonState').on('value', snapshot => {
+            if (!snapshot.val()) return;
+            backgammonState = snapshot.val();
+            if (backgammonState.gameStarted && !gameStarted) startBackgammonGame();
+            updateBackgammonInfo();
+            updateDiceDisplay();
+        });
+    } else if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
         lobbyRef.child('shot').on('value', snapshot => {
             const shot = snapshot.val();
@@ -417,6 +446,12 @@ function startOnlineGame() {
         isOnline = true;
         lobbyRef.child('state').set(gameState);
         updatePublicLobby(); startBilliardGame();
+    } else if (currentGame === 'backgammon') {
+        backgammonState.gameStarted = true;
+        for (const [num, info] of Object.entries(playersInfo)) { backgammonState.playerNicks[num] = info.nick; backgammonState.playerAvatars[num] = info.avatar || ''; }
+        isOnline = true;
+        lobbyRef.child('backgammonState').set(backgammonState);
+        updatePublicLobby(); startBackgammonGame();
     } else {
         pongState.gameStarted = true; pongState.paused = false;
         for (const [num, info] of Object.entries(playersInfo)) { pongState.playerNicks[num] = info.nick; pongState.playerAvatars[num] = info.avatar || ''; }
