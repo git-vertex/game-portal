@@ -37,6 +37,7 @@ let chatHidden = false;
 let anglePrecision = 0.6;
 let disconnectedPlayers = new Set();
 let currentGame = 'billiard';
+let backgammonState = null;
 let currentAvatar = '';
 let currentNickname = '';
 let isLoggedIn = false;
@@ -318,6 +319,13 @@ function joinLobby() {
 }
 
 function setupLobbyListeners() {
+    lobbyRef.child('kicked/' + mySessionId).on('value', snapshot => {
+        if (snapshot.val()) {
+            alert('Вы были кикнуты из лобби');
+            resetState();
+            showMenu();
+        }
+    });
     lobbyRef.child('players').on('value', snapshot => {
         const newPlayersInfo = snapshot.val() || {};
         if (Object.keys(newPlayersInfo).length === 0 && !isHost) { leaveLobby(); return; }
@@ -378,6 +386,25 @@ function leaveLobby() {
     }
     if (wasInLobby) sendGlobalChat(`${wasNick} вышел`, true);
     resetState(); showMenu();
+}
+
+function kickPlayer(playerNum) {
+    if (!isHost || !lobbyRef) return;
+    const playerInfo = playersInfo[playerNum];
+    if (!playerInfo) return;
+    
+    lobbyRef.child('kicked/' + playerInfo.sessionId).set(true);
+    delete playersInfo[playerNum];
+    
+    const reordered = {};
+    let newNum = 1;
+    for (const [num, info] of Object.entries(playersInfo).sort((a, b) => a[0] - b[0])) {
+        reordered[newNum] = info;
+        newNum++;
+    }
+    playersInfo = reordered;
+    lobbyRef.child('players').set(playersInfo);
+    sendGlobalChat(`${playerInfo.nick} был кикнут`, true);
 }
 
 function startOnlineGame() {
@@ -590,7 +617,11 @@ setTimeout(() => { hideLoading(); }, 5000);
 
 // Game Loop
 (function gameLoop() {
-    updateBilliard();
-    drawBilliard();
+    if (currentGame === 'billiard') {
+        updateBilliard();
+        drawBilliard();
+    } else if (currentGame === 'backgammon') {
+        drawBackgammon();
+    }
     requestAnimationFrame(gameLoop);
 })();

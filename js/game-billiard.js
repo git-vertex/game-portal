@@ -780,6 +780,201 @@ function shoot() {
     if (isOnline) sendShot(Math.cos(a) * f, Math.sin(a) * f, cueSpin.x, cueSpin.y);
 }
 
+// ========== BACKGAMMON GAME ==========
+
+const BG_BOARD = { x: 50, y: 50, w: 700, h: 400 };
+const BG_POINT_WIDTH = 50;
+const BG_CHECKER_R = 18;
+
+function initBackgammonState() {
+    backgammonState = {
+        points: Array(24).fill(null).map(() => ({ color: null, count: 0 })),
+        bar: { white: 0, black: 0 },
+        home: { white: 0, black: 0 },
+        currentPlayer: 1,
+        dice: [0, 0],
+        diceRolled: false,
+        movesLeft: [],
+        selectedPoint: -1,
+        playerNicks: {},
+        playerAvatars: {},
+        winner: null,
+        gameStarted: false
+    };
+    setupBackgammonBoard();
+}
+
+function setupBackgammonBoard() {
+    const s = backgammonState;
+    s.points[0] = { color: 'white', count: 2 };
+    s.points[11] = { color: 'white', count: 5 };
+    s.points[16] = { color: 'white', count: 3 };
+    s.points[18] = { color: 'white', count: 5 };
+    s.points[23] = { color: 'black', count: 2 };
+    s.points[12] = { color: 'black', count: 5 };
+    s.points[7] = { color: 'black', count: 3 };
+    s.points[5] = { color: 'black', count: 5 };
+}
+
+function rollDice() {
+    if (!backgammonState || backgammonState.diceRolled) return;
+    if (!isMyTurnBackgammon()) return;
+    
+    backgammonState.dice[0] = Math.floor(Math.random() * 6) + 1;
+    backgammonState.dice[1] = Math.floor(Math.random() * 6) + 1;
+    backgammonState.diceRolled = true;
+    
+    if (backgammonState.dice[0] === backgammonState.dice[1]) {
+        backgammonState.movesLeft = [backgammonState.dice[0], backgammonState.dice[0], backgammonState.dice[0], backgammonState.dice[0]];
+    } else {
+        backgammonState.movesLeft = [...backgammonState.dice];
+    }
+    
+    updateDiceDisplay();
+    playSound('hit');
+    
+    if (isOnline && lobbyRef) {
+        lobbyRef.child('backgammonState').set(backgammonState);
+    }
+}
+
+function updateDiceDisplay() {
+    const d1 = document.getElementById('dice1');
+    const d2 = document.getElementById('dice2');
+    if (!backgammonState) return;
+    
+    d1.textContent = backgammonState.dice[0] || '-';
+    d2.textContent = backgammonState.dice[1] || '-';
+    d1.classList.toggle('rolled', backgammonState.diceRolled);
+    d2.classList.toggle('rolled', backgammonState.diceRolled);
+}
+
+function isMyTurnBackgammon() {
+    if (isSpectator) return false;
+    if (isBotMode) return backgammonState.currentPlayer === 1;
+    if (isOnline) return backgammonState.currentPlayer === myPlayer;
+    return true;
+}
+
+function drawBackgammon() {
+    if (!gameStarted || currentGame !== 'backgammon' || !backgammonState) return;
+    
+    const canvas = document.getElementById('backgammonCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#080808';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Доска
+    ctx.fillStyle = '#5c3d2e';
+    ctx.fillRect(BG_BOARD.x, BG_BOARD.y, BG_BOARD.w, BG_BOARD.h);
+    
+    // Средняя полоса
+    ctx.fillStyle = '#3d2817';
+    ctx.fillRect(BG_BOARD.x + BG_BOARD.w/2 - 20, BG_BOARD.y, 40, BG_BOARD.h);
+    
+    // Треугольники
+    for (let i = 0; i < 12; i++) {
+        const x = i < 6 ? BG_BOARD.x + BG_BOARD.w - (i + 1) * BG_POINT_WIDTH : BG_BOARD.x + (i - 6) * BG_POINT_WIDTH + (i >= 6 ? 40 : 0);
+        
+        ctx.beginPath();
+        ctx.moveTo(x, BG_BOARD.y);
+        ctx.lineTo(x + BG_POINT_WIDTH/2, BG_BOARD.y + BG_BOARD.h/2 - 20);
+        ctx.lineTo(x + BG_POINT_WIDTH, BG_BOARD.y);
+        ctx.fillStyle = i % 2 === 0 ? '#8b5a2b' : '#d4a574';
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(x, BG_BOARD.y + BG_BOARD.h);
+        ctx.lineTo(x + BG_POINT_WIDTH/2, BG_BOARD.y + BG_BOARD.h/2 + 20);
+        ctx.lineTo(x + BG_POINT_WIDTH, BG_BOARD.y + BG_BOARD.h);
+        ctx.fillStyle = i % 2 === 0 ? '#d4a574' : '#8b5a2b';
+        ctx.fill();
+    }
+    
+    // Шашки
+    for (let i = 0; i < 24; i++) {
+        const point = backgammonState.points[i];
+        if (!point || point.count === 0) continue;
+        
+        const pos = getPointPosition(i);
+        const isTop = i >= 12;
+        
+        for (let j = 0; j < Math.min(point.count, 5); j++) {
+            const y = isTop ? pos.y + j * (BG_CHECKER_R * 2 + 2) : pos.y - j * (BG_CHECKER_R * 2 + 2);
+            
+            ctx.beginPath();
+            ctx.arc(pos.x, y, BG_CHECKER_R, 0, Math.PI * 2);
+            ctx.fillStyle = point.color === 'white' ? '#f5f5f5' : '#1a1a1a';
+            ctx.fill();
+            ctx.strokeStyle = point.color === 'white' ? '#ccc' : '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        if (point.count > 5) {
+            ctx.fillStyle = point.color === 'white' ? '#000' : '#fff';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            const y = isTop ? pos.y + 4 * (BG_CHECKER_R * 2 + 2) : pos.y - 4 * (BG_CHECKER_R * 2 + 2);
+            ctx.fillText(point.count.toString(), pos.x, y + 4);
+        }
+    }
+    
+    // Рамка
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(BG_BOARD.x, BG_BOARD.y, BG_BOARD.w, BG_BOARD.h);
+}
+
+function getPointPosition(index) {
+    let x, y;
+    if (index < 6) {
+        x = BG_BOARD.x + BG_BOARD.w - (index + 0.5) * BG_POINT_WIDTH;
+        y = BG_BOARD.y + BG_BOARD.h - BG_CHECKER_R - 5;
+    } else if (index < 12) {
+        x = BG_BOARD.x + (index - 6 + 0.5) * BG_POINT_WIDTH + 40;
+        y = BG_BOARD.y + BG_BOARD.h - BG_CHECKER_R - 5;
+    } else if (index < 18) {
+        x = BG_BOARD.x + (index - 12 + 0.5) * BG_POINT_WIDTH + 40;
+        y = BG_BOARD.y + BG_CHECKER_R + 5;
+    } else {
+        x = BG_BOARD.x + BG_BOARD.w - (index - 18 + 0.5) * BG_POINT_WIDTH;
+        y = BG_BOARD.y + BG_CHECKER_R + 5;
+    }
+    return { x, y };
+}
+
+function startBackgammonGame() {
+    gameStarted = true;
+    initAudio();
+    showBackgammonGame();
+    updateBackgammonInfo();
+}
+
+function showBackgammonGame() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameControls').style.display = 'block';
+    document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('backgammonArea').style.display = 'flex';
+}
+
+function updateBackgammonInfo() {
+    const el = document.getElementById('bgInfo');
+    if (!el || !backgammonState) return;
+    
+    const nick = backgammonState.playerNicks[backgammonState.currentPlayer] || `Игрок ${backgammonState.currentPlayer}`;
+    el.textContent = isMyTurnBackgammon() ? 'ВАШ ХОД' : nick;
+    el.style.color = PLAYER_COLORS[backgammonState.currentPlayer - 1];
+    
+    document.getElementById('bgPlayer1Nick').textContent = backgammonState.playerNicks[1] || 'Игрок 1';
+    document.getElementById('bgPlayer2Nick').textContent = backgammonState.playerNicks[2] || 'Игрок 2';
+}
+
+document.getElementById('rollDiceBtn')?.addEventListener('click', rollDice);
+
+
 function drawBilliard() {
     if (!gameStarted || !gameState?.balls) return;
 

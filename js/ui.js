@@ -52,12 +52,19 @@ function updateTimerDisplay() {
 }
 
 function switchGame(game) {
-    currentGame = 'billiard';
+    if (gameStarted || lobbyCode) return;
+    currentGame = game;
+    document.querySelectorAll('.gameBtn').forEach(b => b.classList.remove('active'));
+    document.getElementById(game === 'billiard' ? 'billiardBtn' : 'backgammonBtn')?.classList.add('active');
+    document.getElementById('gameTitle').textContent = game === 'billiard' ? 'БИЛЬЯРД' : 'НАРДЫ';
+    document.getElementById('gameSubtitle').textContent = 'Многопользовательская онлайн игра';
+    loadPublicServers();
 }
 
 function showMenu() {
     document.getElementById('menuPanel').style.display = 'flex';
     document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('backgammonArea').style.display = 'none';
     document.getElementById('gameControls').style.display = 'none';
     document.getElementById('lobbyInfo').style.display = 'none';
     document.getElementById('createSection').style.display = 'block';
@@ -73,7 +80,13 @@ function showLobbyUI() {
 function showGame() {
     document.getElementById('menuPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'block';
-    document.getElementById('gameArea').style.display = 'flex';
+    if (currentGame === 'billiard') {
+        document.getElementById('gameArea').style.display = 'flex';
+        document.getElementById('backgammonArea').style.display = 'none';
+    } else if (currentGame === 'backgammon') {
+        document.getElementById('gameArea').style.display = 'none';
+        document.getElementById('backgammonArea').style.display = 'flex';
+    }
 }
 
 function updateViewersCount() {
@@ -116,6 +129,9 @@ function updatePlayersList() {
         const isCurrentUser = info.sessionId === mySessionId;
         const rating = isCurrentUser ? (playerStats[currentGame]?.frp || 0) : (info.frp || 0);
 
+        const canKick = isHost && !isMe && !gameStarted;
+        const kickBtn = canKick ? `<button class="kick-btn" onclick="kickPlayer(${num})" title="Кикнуть"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>` : '';
+
         row.innerHTML = `
             <td>
                 <div class="player-cell">
@@ -127,7 +143,7 @@ function updatePlayersList() {
                 </div>
             </td>
             <td><span style="color: var(--accent-green); font-weight: 600;">${rating}</span></td>
-            <td><span class="status-ready">Готов</span></td>
+            <td style="display: flex; align-items: center; gap: 8px;"><span class="status-ready">Готов</span>${kickBtn}</td>
         `;
         tbody.appendChild(row);
     }
