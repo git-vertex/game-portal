@@ -19,7 +19,6 @@ async function cleanOldUsers() {
 window.cleanOldUsers = cleanOldUsers;
 
 let gameState = null;
-let pongState = null;
 let lobbyCode = null;
 let isHost = false;
 let isOnline = false;
@@ -209,7 +208,7 @@ function resetState() {
     stopTurnTimer();
     if (lobbyRef) { lobbyRef.off(); lobbyRef = null; }
     removePublicLobby();
-    gameState = null; pongState = null; checkersState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
+    gameState = null; checkersState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
     document.getElementById('foulMessage').textContent = '';
     document.getElementById('spectatorBadge').style.display = 'none';
     document.getElementById('gameContent').classList.remove('game-ended');
@@ -240,11 +239,6 @@ function createLobby() {
         checkersState.playerNicks = { 1: myNickname };
         checkersState.playerAvatars = { 1: getAvatar() };
         lobbyRef.set({ checkersState: checkersState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'checkers', lastUpdate: Date.now() });
-    } else {
-        initPongState();
-        pongState.playerNicks = { 1: myNickname };
-        pongState.playerAvatars = { 1: getAvatar() };
-        lobbyRef.set({ pongState: pongState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'pong', paddleMove: null, lastUpdate: Date.now() });
     }
     setupLobbyListeners(); updatePublicLobby();
     sendGlobalChat(`${myNickname} создал лобби`, true);
@@ -274,12 +268,6 @@ function playWithBot() {
         checkersState.gameStarted = true;
         checkersState.currentPlayer = 1;
         startCheckersGame();
-    } else {
-        initPongState();
-        pongState.playerNicks = { 1: myNickname, 2: 'Бот' };
-        pongState.playerAvatars = { 1: getAvatar(), 2: '' };
-        pongState.gameStarted = true;
-        startPongGame();
     }
 }
 
@@ -310,7 +298,7 @@ function joinLobby() {
         maxPlayers = data.maxPlayers || 2;
         playersInfo = data.players || {};
         const playerCount = Object.keys(playersInfo).length;
-        const gameAlreadyStarted = data.state?.gameStarted || data.pongState?.gameStarted || data.checkersState?.gameStarted;
+        const gameAlreadyStarted = data.state?.gameStarted || data.checkersState?.gameStarted;
         if (playerCount >= maxPlayers || gameAlreadyStarted) {
             isSpectator = true; isOnline = true; myPlayer = 0;
             lobbyRef.child('spectators').transaction(c => (c || 0) + 1);
@@ -319,7 +307,6 @@ function joinLobby() {
             if (gameAlreadyStarted) {
                 if (data.game === 'billiard' && data.state) { gameState = data.state; startBilliardGame(); }
                 else if (data.game === 'checkers' && data.checkersState) { checkersState = data.checkersState; startCheckersGame(); }
-                else if (data.pongState) { pongState = data.pongState; startPongGame(); }
             }
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
@@ -379,8 +366,6 @@ function setupSpectatorListeners() {
     } else if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
         lobbyRef.child('aim').on('value', snapshot => { opponentAim = snapshot.val(); });
-    } else {
-        lobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
     }
 }
 
@@ -402,9 +387,6 @@ function setupPlayerListeners() {
             }
         });
         lobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
-    } else {
-        lobbyRef.child('pongState').on('value', snapshot => { if (!snapshot.val()) return; pongState = snapshot.val(); if (pongState.gameStarted && !gameStarted) startPongGame(); });
-        lobbyRef.child('paddleMove').on('value', snapshot => { const move = snapshot.val(); if (move && move.player !== myPlayer && pongState) pongState.paddles[move.player - 1].y = move.y; });
     }
 }
 
@@ -455,12 +437,6 @@ function startOnlineGame() {
         isOnline = true;
         lobbyRef.child('checkersState').set(checkersState);
         updatePublicLobby(); startCheckersGame();
-    } else {
-        pongState.gameStarted = true; pongState.paused = false;
-        for (const [num, info] of Object.entries(playersInfo)) { pongState.playerNicks[num] = info.nick; pongState.playerAvatars[num] = info.avatar || ''; }
-        isOnline = true;
-        lobbyRef.child('pongState').set(pongState);
-        updatePublicLobby(); startPongGame();
     }
     sendGlobalChat(`Игра началась!`, true);
 }
@@ -473,14 +449,6 @@ function startBilliardGame() {
         lobbyRef.child('shot').on('value', snapshot => { const shot = snapshot.val(); if (shot && shot.player !== myPlayer && !gameState?.isMoving) performShot(shot.vx, shot.vy); });
         lobbyRef.child('aim').on('value', snapshot => { const aim = snapshot.val(); opponentAim = (aim && aim.player !== myPlayer) ? aim : null; });
     }
-}
-
-function startPongGame() {
-    gameStarted = true; initAudio(); showGame();
-    if (isSpectator) document.getElementById('pongSpectatorBadge').style.display = 'block';
-    document.getElementById('pongPlayer1Name').textContent = pongState.playerNicks[1] || 'Игрок 1';
-    document.getElementById('pongPlayer2Name').textContent = pongState.playerNicks[2] || 'Игрок 2';
-    if (isBotMode) pongState.paused = false;
 }
 
 // Event Listeners
