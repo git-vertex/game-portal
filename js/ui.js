@@ -59,7 +59,6 @@ function switchGame(game) {
         document.getElementById('billiardBtn').classList.add('active');
         document.getElementById('gameTitle').textContent = 'БИЛЬЯРД';
         document.getElementById('playerCount').style.display = '';
-    document.getElementById('gameTitle').textContent = 'ШАШКИ';
     }
     loadPublicServers();
 }
