@@ -75,6 +75,9 @@ function updateAccountDisplay() {
         chatInput.disabled = !isLoggedIn;
     }
     const balanceEl = document.getElementById('displayBalance');
+    const adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) adminBtn.style.display = (isLoggedIn && currentNickname.toLowerCase() === 'вцфвфв') ? 'flex' : 'none';
+    
     if (isLoggedIn) {
         document.getElementById('displayNick').textContent = currentNickname;
         document.getElementById('accountStatus').textContent = 'Профиль';
@@ -627,3 +630,35 @@ function updateBalance(amount) {
     updateAccountDisplay();
 }
 window.updateBalance = updateBalance;
+
+async function giveAdminBalance() {
+    if (currentNickname.toLowerCase() !== 'вцфвфв') return;
+    const target = document.getElementById('adminTarget').value.trim().toLowerCase();
+    const amount = parseInt(document.getElementById('adminAmount').value);
+    const msgEl = document.getElementById('adminMsg');
+    
+    if (!target || !amount) { msgEl.textContent = 'Ошибка ввода'; return; }
+    
+    try {
+        const ref = db.ref('users/' + target + '/stats');
+        const snap = await ref.once('value');
+        if (!snap.exists()) { msgEl.textContent = 'Игрок не найден'; return; }
+        
+        const st = snap.val();
+        if (!st.balance) st.balance = 0;
+        st.balance += amount;
+        
+        await ref.set(st);
+        
+        if (target === currentNickname.toLowerCase()) {
+            playerStats.balance = st.balance;
+            updateAccountDisplay();
+        }
+        
+        msgEl.textContent = `Успешно выдано ${amount} игроку ${target}`;
+        setTimeout(() => msgEl.textContent = '', 3000);
+    } catch (e) {
+        msgEl.textContent = 'Ошибка БД';
+    }
+}
+window.giveAdminBalance = giveAdminBalance;

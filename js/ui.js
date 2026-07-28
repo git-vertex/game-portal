@@ -714,9 +714,28 @@ showGame = function () {
     setTimeout(initSpinControl, 100);
 };
 // ========== CASINO LOGIC ==========
+const slotIcons = {
+    'cherry': '<svg viewBox="0 0 24 24" width="40" height="40"><circle cx="7" cy="17" r="5" fill="#dc2626"/><circle cx="17" cy="17" r="5" fill="#dc2626"/><path d="M7 12 C 7 4, 12 2, 12 2 S 17 4, 17 12" stroke="#16a34a" stroke-width="2" fill="none"/></svg>',
+    'lemon': '<svg viewBox="0 0 24 24" width="40" height="40"><path d="M12 4 C 18 4, 20 8, 18 14 C 16 20, 12 20, 6 14 C 4 8, 6 4, 12 4 Z" fill="#facc15"/></svg>',
+    'bell': '<svg viewBox="0 0 24 24" width="40" height="40"><path d="M12 2 a 5 5 0 0 0 -5 5 v 5 l -2 3 v 2 h 14 v -2 l -2 -3 v -5 a 5 5 0 0 0 -5 -5 z" fill="#fbbf24"/><circle cx="12" cy="20" r="2" fill="#fbbf24"/></svg>',
+    'star': '<svg viewBox="0 0 24 24" width="40" height="40"><polygon points="12 2 15 8.5 22 9.5 17 14 18 21 12 17.5 6 21 7 14 2 9.5 9 8.5 12 2" fill="#fbbf24"/></svg>',
+    'diamond': '<svg viewBox="0 0 24 24" width="40" height="40"><polygon points="12 2 2 8 12 22 22 8 12 2" fill="#22d3ee"/></svg>',
+    'seven': '<svg viewBox="0 0 24 24" width="40" height="40"><path d="M6 6 h12 l-5 14 h-4 l5 -10 h-5 z" fill="#ef4444"/></svg>'
+};
+const symbols = Object.keys(slotIcons);
+
+window.addEventListener('DOMContentLoaded', () => {
+    for(let i=1; i<=5; i++) {
+        const el = document.getElementById('slot' + i);
+        if(el) {
+            el.innerHTML = slotIcons['cherry'];
+            el.setAttribute('data-sym', 'cherry');
+        }
+    }
+});
+
 let currentBet = 10;
 let isSpinning = false;
-const symbols = ['🍒', '🍋', '🍉', '⭐', '💎', '7️⃣'];
 
 function setBet(amount) {
     if (isSpinning) return;
@@ -740,15 +759,14 @@ function spinSlots() {
     document.getElementById('casinoMsg').textContent = 'Крутим...';
     document.getElementById('spinBtn').disabled = true;
 
-    const s1 = document.getElementById('slot1');
-    const s2 = document.getElementById('slot2');
-    const s3 = document.getElementById('slot3');
-
     let ticks = 0;
     const interval = setInterval(() => {
-        s1.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        s2.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-        s3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        for(let i=1; i<=5; i++) {
+            const sym = symbols[Math.floor(Math.random() * symbols.length)];
+            const el = document.getElementById('slot' + i);
+            el.innerHTML = slotIcons[sym];
+            el.setAttribute('data-sym', sym);
+        }
         ticks++;
         if (ticks > 20) {
             clearInterval(interval);
@@ -758,32 +776,80 @@ function spinSlots() {
 }
 
 function finishSpin() {
-    const s1 = document.getElementById('slot1').textContent;
-    const s2 = document.getElementById('slot2').textContent;
-    const s3 = document.getElementById('slot3').textContent;
+    const results = [];
+    for(let i=1; i<=5; i++) {
+        results.push(document.getElementById('slot' + i).getAttribute('data-sym'));
+    }
 
     isSpinning = false;
     document.getElementById('spinBtn').disabled = false;
 
-    if (s1 === s2 && s2 === s3) {
+    const counts = {};
+    let maxCount = 0;
+    let maxSym = '';
+    results.forEach(s => {
+        counts[s] = (counts[s] || 0) + 1;
+        if(counts[s] > maxCount) {
+            maxCount = counts[s];
+            maxSym = s;
+        }
+    });
+
+    let win = 0;
+    let msg = '';
+    let color = '#ef4444';
+
+    if (maxCount === 5) {
+        let multi = 50;
+        if (maxSym === 'seven') multi = 500;
+        if (maxSym === 'diamond') multi = 250;
+        win = currentBet * multi;
+        msg = `МЕГА ДЖЕКПОТ! 5x совпадение = ${win} 💰`;
+        color = '#10b981';
+    } else if (maxCount === 4) {
         let multi = 10;
-        if (s1 === '7️⃣') multi = 50;
-        else if (s1 === '💎') multi = 25;
-        else if (s1 === '⭐') multi = 15;
-        
-        const win = currentBet * multi;
-        document.getElementById('casinoMsg').textContent = `ДЖЕКПОТ! Вы выиграли ${win} 💰`;
-        document.getElementById('casinoMsg').style.color = '#10b981';
-        updateBalance(win);
-    } else if (s1 === s2 || s2 === s3 || s1 === s3) {
-        const win = currentBet * 2;
-        document.getElementById('casinoMsg').textContent = `Совпадение! Вы выиграли ${win} 💰`;
-        document.getElementById('casinoMsg').style.color = '#3b82f6';
-        updateBalance(win);
+        if (maxSym === 'seven') multi = 50;
+        win = currentBet * multi;
+        msg = `ОТЛИЧНО! 4x совпадение = ${win} 💰`;
+        color = '#3b82f6';
+    } else if (maxCount === 3) {
+        win = currentBet * 2;
+        msg = `Совпадение! 3x совпадение = ${win} 💰`;
+        color = '#f59e0b';
     } else {
-        document.getElementById('casinoMsg').textContent = 'Ничего. Попробуйте еще!';
-        document.getElementById('casinoMsg').style.color = '#ef4444';
+        msg = 'Мимо. Попробуйте еще!';
     }
+
+    document.getElementById('casinoMsg').textContent = msg;
+    document.getElementById('casinoMsg').style.color = color;
+    if (win > 0) updateBalance(win);
+}
+
+function buyCoins(amount, price) {
+    if (!isLoggedIn) { alert('Войдите в аккаунт!'); return; }
+    
+    const modal = document.getElementById('paymentModal');
+    const status = document.getElementById('paymentStatus');
+    const spinner = document.getElementById('paymentSpinner');
+    
+    modal.classList.add('show');
+    status.textContent = `Оплата ${price} ₽...`;
+    status.style.color = '';
+    spinner.style.display = 'block';
+    
+    setTimeout(() => {
+        status.textContent = 'Обработка транзакции...';
+        setTimeout(() => {
+            spinner.style.display = 'none';
+            status.textContent = `Успешно! Начислено ${amount} 💰`;
+            status.style.color = '#10b981';
+            updateBalance(amount);
+            
+            setTimeout(() => {
+                modal.classList.remove('show');
+            }, 2000);
+        }, 1500);
+    }, 1500);
 }
 
 // ========== SHOP LOGIC ==========
