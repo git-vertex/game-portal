@@ -583,10 +583,26 @@ async function cleanOldUsers() {
 setTimeout(() => { hideLoading(); }, 5000);
 
 // Game Loop
+let lastTime = performance.now();
+let accumulator = 0;
+const TICK_RATE = 1000 / 60;
+
 (function gameLoop() {
+    const time = performance.now();
     if (currentGame === 'billiard') {
-        updateBilliard();
+        const delta = time - lastTime;
+        lastTime = time;
+        // Limit delta to prevent spiral of death if tab is backgrounded
+        accumulator += Math.min(delta, 100);
+        
+        while (accumulator >= TICK_RATE) {
+            updateBilliard();
+            accumulator -= TICK_RATE;
+        }
         drawBilliard();
+    } else {
+        lastTime = time;
     }
     requestAnimationFrame(gameLoop);
 })();
+

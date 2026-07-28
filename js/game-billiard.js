@@ -369,7 +369,9 @@ function restoreCueBall() {
 
     cueBallRestoring = false;
 
-    if (isOnline && isHost) {
+    if (!gameState.isMoving) {
+        endTurn();
+    } else if (isOnline && isHost) {
         setTimeout(() => syncState(), 100);
     }
 }
@@ -657,42 +659,6 @@ function updateBilliard() {
     }
 
     updateBilliardInfo();
-}
-
-function updateBilliardInfo() {
-    const el = document.getElementById('info');
-    if (!el) return;
-
-    if (gameState.winner) {
-        const nick = gameState.playerNicks[gameState.winner];
-        el.textContent = (isOnline && !isSpectator && gameState.winner === myPlayer) || (isBotMode && gameState.winner === 1) ? 'ПОБЕДА!' : `${nick} победил`;
-        el.style.color = PLAYER_COLORS[gameState.winner - 1];
-    } else if (gameState.isMoving) {
-        el.textContent = '...';
-        el.style.color = '#666';
-    } else {
-        const nick = gameState.playerNicks[gameState.currentPlayer];
-        el.textContent = (isOnline && !isSpectator) ? (isMyTurn() ? 'ВАШ ХОД' : nick) : (isBotMode ? (gameState.currentPlayer === 1 ? 'ВАШ ХОД' : 'ХОД БОТА') : nick);
-        el.style.color = PLAYER_COLORS[gameState.currentPlayer - 1];
-    }
-}
-
-function updateBilliardInfo() {
-    const el = document.getElementById('info');
-    if (!el) return;
-
-    if (gameState.winner) {
-        const nick = gameState.playerNicks[gameState.winner];
-        el.textContent = (isOnline && !isSpectator && gameState.winner === myPlayer) || (isBotMode && gameState.winner === 1) ? 'ПОБЕДА!' : `${nick} победил`;
-        el.style.color = PLAYER_COLORS[gameState.winner - 1];
-    } else if (gameState.isMoving) {
-        el.textContent = '...';
-        el.style.color = '#666';
-    } else {
-        const nick = gameState.playerNicks[gameState.currentPlayer];
-        el.textContent = (isOnline && !isSpectator) ? (isMyTurn() ? 'ВАШ ХОД' : nick) : (isBotMode ? (gameState.currentPlayer === 1 ? 'ВАШ ХОД' : 'ХОД БОТА') : nick);
-        el.style.color = PLAYER_COLORS[gameState.currentPlayer - 1];
-    }
 }
 
 function updateBilliardInfo() {
