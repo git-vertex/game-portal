@@ -59,16 +59,13 @@ function switchGame(game) {
         document.getElementById('billiardBtn').classList.add('active');
         document.getElementById('gameTitle').textContent = 'БИЛЬЯРД';
         document.getElementById('playerCount').style.display = '';
-    } else if (game === 'checkers') {
-        document.getElementById('checkersBtn').classList.add('active');
-        document.getElementById('gameTitle').textContent = 'ШАШКИ';
+    document.getElementById('gameTitle').textContent = 'ШАШКИ';
     }
     loadPublicServers();
 }
 function showMenu() {
     document.getElementById('menuPanel').style.display = 'flex';
     document.getElementById('gameArea').style.display = 'none';
-    document.getElementById('checkersArea').style.display = 'none';
     document.getElementById('gameControls').style.display = 'none';
     document.getElementById('lobbyInfo').style.display = 'none';
     document.getElementById('createSection').style.display = 'block';
@@ -84,13 +81,7 @@ function showLobbyUI() {
 function showGame() {
     document.getElementById('menuPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'block';
-    if (currentGame === 'checkers') {
-        document.getElementById('gameArea').style.display = 'none';
-        document.getElementById('checkersArea').style.display = 'flex';
-    } else {
-        document.getElementById('gameArea').style.display = 'flex';
-        document.getElementById('checkersArea').style.display = 'none';
-    }
+    document.getElementById('gameArea').style.display = 'flex';
 }
 
 function updateViewersCount() {

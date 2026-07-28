@@ -36,7 +36,6 @@ let chatHidden = false;
 let anglePrecision = 0.6;
 let disconnectedPlayers = new Set();
 let currentGame = 'billiard';
-let checkersState = null;
 let currentAvatar = '';
 let currentNickname = '';
 let isLoggedIn = false;
@@ -208,7 +207,7 @@ function resetState() {
     stopTurnTimer();
     if (lobbyRef) { lobbyRef.off(); lobbyRef = null; }
     removePublicLobby();
-    gameState = null; checkersState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
+    gameState = null; lobbyCode = null; isHost = false; isOnline = false; isSpectator = false; isBotMode = false; myPlayer = 0; gameStarted = false; maxPlayers = 2; playersInfo = {}; spectatorCount = 0; opponentAim = null; isAiming = false; power = 0; wheelAngleOffset = 0; disconnectedPlayers.clear();
     document.getElementById('foulMessage').textContent = '';
     document.getElementById('spectatorBadge').style.display = 'none';
     document.getElementById('gameContent').classList.remove('game-ended');
@@ -234,11 +233,6 @@ function createLobby() {
         gameState.playerNicks = { 1: myNickname };
         gameState.playerAvatars = { 1: getAvatar() };
         lobbyRef.set({ state: gameState, maxPlayers, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'billiard', shot: null, aim: null, lastUpdate: Date.now() });
-    } else if (currentGame === 'checkers') {
-        initCheckersState();
-        checkersState.playerNicks = { 1: myNickname };
-        checkersState.playerAvatars = { 1: getAvatar() };
-        lobbyRef.set({ checkersState: checkersState, maxPlayers: 2, players: playersInfo, spectators: 0, private: isPrivateLobby, hostSessionId: mySessionId, game: 'checkers', lastUpdate: Date.now() });
     }
     setupLobbyListeners(); updatePublicLobby();
     sendGlobalChat(`${myNickname} создал лобби`, true);
@@ -261,13 +255,6 @@ function playWithBot() {
         gameState.currentPlayer = 2;
         initBalls(); startBilliardGame();
         setTimeout(botBilliardMove, 1500);
-    } else if (currentGame === 'checkers') {
-        initCheckersState();
-        checkersState.playerNicks = { 1: myNickname, 2: 'Бот' };
-        checkersState.playerAvatars = { 1: getAvatar(), 2: '' };
-        checkersState.gameStarted = true;
-        checkersState.currentPlayer = 1;
-        startCheckersGame();
     }
 }
 
@@ -298,7 +285,7 @@ function joinLobby() {
         maxPlayers = data.maxPlayers || 2;
         playersInfo = data.players || {};
         const playerCount = Object.keys(playersInfo).length;
-        const gameAlreadyStarted = data.state?.gameStarted || data.checkersState?.gameStarted;
+        const gameAlreadyStarted = data.state?.gameStarted;
         if (playerCount >= maxPlayers || gameAlreadyStarted) {
             isSpectator = true; isOnline = true; myPlayer = 0;
             lobbyRef.child('spectators').transaction(c => (c || 0) + 1);
@@ -306,7 +293,7 @@ function joinLobby() {
             setupSpectatorListeners();
             if (gameAlreadyStarted) {
                 if (data.game === 'billiard' && data.state) { gameState = data.state; startBilliardGame(); }
-                else if (data.game === 'checkers' && data.checkersState) { checkersState = data.checkersState; startCheckersGame(); }
+                
             }
         } else {
             myPlayer = playerCount + 1; isOnline = true; isSpectator = false;
@@ -356,14 +343,7 @@ function setupLobbyListeners() {
 
 function setupSpectatorListeners() {
     setupLobbyListeners();
-    if (currentGame === 'checkers') {
-        lobbyRef.child('checkersState').on('value', snapshot => {
-            if (!snapshot.val()) return;
-            checkersState = snapshot.val();
-            if (checkersState.gameStarted && !gameStarted) startCheckersGame();
-            updateCheckersInfo();
-        });
-    } else if (currentGame === 'billiard') {
+    if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
         lobbyRef.child('aim').on('value', snapshot => { opponentAim = snapshot.val(); });
     }
@@ -371,14 +351,7 @@ function setupSpectatorListeners() {
 
 function setupPlayerListeners() {
     setupLobbyListeners();
-    if (currentGame === 'checkers') {
-        lobbyRef.child('checkersState').on('value', snapshot => {
-            if (!snapshot.val()) return;
-            checkersState = snapshot.val();
-            if (checkersState.gameStarted && !gameStarted) startCheckersGame();
-            updateCheckersInfo();
-        });
-    } else if (currentGame === 'billiard') {
+    if (currentGame === 'billiard') {
         lobbyRef.child('state').on('value', snapshot => { if (!snapshot.val()) return; gameState = snapshot.val(); ensureGameStateArrays(); if (gameState.gameStarted && !gameStarted) startBilliardGame(); if (gameStarted) updateScorePanel(); });
         lobbyRef.child('shot').on('value', snapshot => {
             const shot = snapshot.val();
@@ -431,12 +404,6 @@ function startOnlineGame() {
         isOnline = true;
         lobbyRef.child('state').set(gameState);
         updatePublicLobby(); startBilliardGame();
-    } else if (currentGame === 'checkers') {
-        checkersState.gameStarted = true;
-        for (const [num, info] of Object.entries(playersInfo)) { checkersState.playerNicks[num] = info.nick; checkersState.playerAvatars[num] = info.avatar || ''; }
-        isOnline = true;
-        lobbyRef.child('checkersState').set(checkersState);
-        updatePublicLobby(); startCheckersGame();
     }
     sendGlobalChat(`Игра началась!`, true);
 }
@@ -620,8 +587,6 @@ setTimeout(() => { hideLoading(); }, 5000);
     if (currentGame === 'billiard') {
         updateBilliard();
         drawBilliard();
-    } else if (currentGame === 'checkers') {
-        drawCheckers();
     }
     requestAnimationFrame(gameLoop);
 })();
