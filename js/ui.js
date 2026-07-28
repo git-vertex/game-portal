@@ -576,9 +576,6 @@ function recordMatch(game, won, pocketedCount = 0) {
     if (game === 'billiard' && gameState) {
         const oppPlayer = myPlayer === 1 ? 2 : 1;
         opponent = gameState.playerNicks[oppPlayer] || 'Unknown';
-    } else if (game === 'pong' && pongState) {
-        const oppPlayer = myPlayer === 1 ? 2 : 1;
-        opponent = pongState.playerNicks[oppPlayer] || 'Unknown';
     }
 
     playerStats.history.unshift({

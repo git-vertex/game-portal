@@ -76,16 +76,12 @@ function initBalls() {
             const num = numbers[idx];
 
             let ballType;
-            const numPlayers = gameState.totalPlayers || 2;
-            const types = ['solid', 'stripe', 'dot', 'ring', 'half', 'diamond'];
-            const ballsPerType = Math.floor(14 / numPlayers);
-
             if (num === 8) {
                 ballType = 'eight';
+            } else if (num < 8) {
+                ballType = 'solid';
             } else {
-                const adjustedNum = num > 8 ? num - 1 : num;
-                const typeIndex = Math.floor((adjustedNum - 1) / ballsPerType);
-                ballType = types[Math.min(typeIndex, numPlayers - 1)];
+                ballType = 'stripe';
             }
 
             gameState.balls.push({
@@ -785,6 +781,8 @@ function shoot() {
 const BG_BOARD = { x: 50, y: 50, w: 700, h: 400 };
 const BG_POINT_WIDTH = 50;
 const BG_CHECKER_R = 18;
+
+let backgammonState = null;
 
 function initBackgammonState() {
     backgammonState = {

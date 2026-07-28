@@ -145,7 +145,7 @@ function updatePublicLobby() {
         hostName: isLoggedIn ? currentNickname : 'Гость',
         players: Object.keys(playersInfo).length,
         maxPlayers: maxPlayers,
-        gameStarted: gameState?.gameStarted || pongState?.gameStarted || false,
+        gameStarted: gameState?.gameStarted || false,
         game: currentGame,
         sessionId: mySessionId,
         lastUpdate: Date.now()

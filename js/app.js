@@ -581,12 +581,6 @@ document.addEventListener('keydown', e => {
         if (currentGame === 'billiard' && !gameState?.isMoving) {
             if (isOnline && isHost) { initBalls(); gameState.gameStarted = true; syncState(); createScorePanels(); updateScorePanel(); startTurnTimer(); sendGlobalChat(`Рестарт`, true); }
             else if (!isOnline || isBotMode) { initBalls(); createScorePanels(); updateScorePanel(); startTurnTimer(); document.getElementById('foulMessage').textContent = ''; }
-        } else if (currentGame === 'pong') {
-            if (isBotMode || (isOnline && isHost)) {
-                initPongState(); pongState.gameStarted = true; pongState.paused = false;
-                pongState.playerNicks = { 1: myNickname, 2: isBotMode ? 'Бот' : playersInfo[2]?.nick || 'Игрок 2' };
-                if (isOnline && lobbyRef) lobbyRef.child('pongState').set(pongState);
-            }
         }
     }
     if (e.key === 'Escape' && (gameStarted || lobbyCode)) { if (confirm('Выйти?')) leaveLobby(); }
