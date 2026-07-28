@@ -68,18 +68,63 @@ function switchGame(game) {
     } else if (game === 'shop') {
         document.getElementById('gameTitle').textContent = 'МАГАЗИН';
         showShop();
+    } else if (game === 'bank') {
+        document.getElementById('gameTitle').textContent = 'ДОНАТ';
+        showBank();
+    } else if (game === 'admin') {
+        document.getElementById('gameTitle').textContent = 'АДМИНКА';
+        showAdmin();
     }
 }
 function showMenu() {
     document.getElementById('menuPanel').style.display = 'flex';
     document.getElementById('gameArea').style.display = 'none';
-    document.getElementById('casinoPanel').style.display = 'none';
-    document.getElementById('shopPanel').style.display = 'none';
+    if(document.getElementById('casinoPanel')) document.getElementById('casinoPanel').style.display = 'none';
+    if(document.getElementById('shopPanel')) document.getElementById('shopPanel').style.display = 'none';
+    if(document.getElementById('bankPanel')) document.getElementById('bankPanel').style.display = 'none';
+    if(document.getElementById('adminPanel')) document.getElementById('adminPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'none';
     document.getElementById('lobbyInfo').style.display = 'none';
     document.getElementById('createSection').style.display = 'block';
     gameStarted = false;
     startAutoRefresh();
+}
+
+function showCasino() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'none';
+    if(document.getElementById('shopPanel')) document.getElementById('shopPanel').style.display = 'none';
+    if(document.getElementById('bankPanel')) document.getElementById('bankPanel').style.display = 'none';
+    if(document.getElementById('adminPanel')) document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('casinoPanel').style.display = 'flex';
+}
+
+function showShop() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'none';
+    if(document.getElementById('casinoPanel')) document.getElementById('casinoPanel').style.display = 'none';
+    if(document.getElementById('bankPanel')) document.getElementById('bankPanel').style.display = 'none';
+    if(document.getElementById('adminPanel')) document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('shopPanel').style.display = 'flex';
+    if(typeof renderShop === 'function') renderShop();
+}
+
+function showBank() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'none';
+    if(document.getElementById('casinoPanel')) document.getElementById('casinoPanel').style.display = 'none';
+    if(document.getElementById('shopPanel')) document.getElementById('shopPanel').style.display = 'none';
+    if(document.getElementById('adminPanel')) document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('bankPanel').style.display = 'flex';
+}
+
+function showAdmin() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'none';
+    if(document.getElementById('casinoPanel')) document.getElementById('casinoPanel').style.display = 'none';
+    if(document.getElementById('shopPanel')) document.getElementById('shopPanel').style.display = 'none';
+    if(document.getElementById('bankPanel')) document.getElementById('bankPanel').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'flex';
 }
 
 function showLobbyUI() {
@@ -89,6 +134,10 @@ function showLobbyUI() {
 
 function showGame() {
     document.getElementById('menuPanel').style.display = 'none';
+    if(document.getElementById('casinoPanel')) document.getElementById('casinoPanel').style.display = 'none';
+    if(document.getElementById('shopPanel')) document.getElementById('shopPanel').style.display = 'none';
+    if(document.getElementById('bankPanel')) document.getElementById('bankPanel').style.display = 'none';
+    if(document.getElementById('adminPanel')) document.getElementById('adminPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'block';
     document.getElementById('gameArea').style.display = 'flex';
 }
@@ -949,20 +998,5 @@ function equipItem(type, id) {
     if (isLoggedIn && db && firebaseReady) {
         db.ref('users/' + currentNickname.toLowerCase() + '/stats').set(playerStats);
     }
-    renderShop();
-}
-
-function showCasino() {
-    document.getElementById('menuPanel').style.display = 'none';
-    document.getElementById('gameArea').style.display = 'none';
-    document.getElementById('shopPanel').style.display = 'none';
-    document.getElementById('casinoPanel').style.display = 'flex';
-}
-
-function showShop() {
-    document.getElementById('menuPanel').style.display = 'none';
-    document.getElementById('gameArea').style.display = 'none';
-    document.getElementById('casinoPanel').style.display = 'none';
-    document.getElementById('shopPanel').style.display = 'flex';
     renderShop();
 }
