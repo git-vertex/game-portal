@@ -2908,6 +2908,8 @@ select:disabled {
 #menuPanel,
 #gameArea,
 #checkersArea,
+#casinoPanel,
+#shopPanel,
 #lobbyInfo,
 #createSection {
     transition: opacity 0.3s ease, transform 0.3s ease;

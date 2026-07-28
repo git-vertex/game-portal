@@ -45,7 +45,7 @@ let power = 0;
 let aimAngle = 0;
 let wheelAngleOffset = 0;
 let opponentAim = null;
-let playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
+let playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [], balance: 1000, skins: { table: '#1a5c2e', ball: 'default' } };
 
 function loadAccount() {
     const saved = localStorage.getItem('billiardAccount');
@@ -59,6 +59,10 @@ function loadStats() {
         playerStats = JSON.parse(saved);
         if (!playerStats.billiard) playerStats.billiard = { games: 0, wins: 0, frp: 0 };
         if (!playerStats.history) playerStats.history = [];
+        if (playerStats.balance === undefined) playerStats.balance = 1000;
+        if (!playerStats.skins) playerStats.skins = { table: '#1a5c2e', ball: 'default' };
+        if (!playerStats.unlockedTables) playerStats.unlockedTables = ['#1a5c2e'];
+        if (!playerStats.unlockedBalls) playerStats.unlockedBalls = ['default'];
     }
 }
 function saveStats() { localStorage.setItem('playerStats', JSON.stringify(playerStats)); }
@@ -70,21 +74,27 @@ function updateAccountDisplay() {
         chatInput.placeholder = isLoggedIn ? 'Сообщение...' : 'Войдите чтобы писать...';
         chatInput.disabled = !isLoggedIn;
     }
-    if (isLoggedIn && currentAvatar) {
+    const balanceEl = document.getElementById('displayBalance');
+    if (isLoggedIn) {
         document.getElementById('displayNick').textContent = currentNickname;
         document.getElementById('accountStatus').textContent = 'Профиль';
-        avatarBtn.innerHTML = `<img src="${currentAvatar}" alt="">`;
-        avatarBtn.classList.add('has-avatar');
-    } else if (isLoggedIn) {
-        document.getElementById('displayNick').textContent = currentNickname;
-        document.getElementById('accountStatus').textContent = 'Профиль';
-        avatarBtn.innerHTML = `<svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-        avatarBtn.classList.remove('has-avatar');
+        if (currentAvatar) {
+            avatarBtn.innerHTML = `<img src="${currentAvatar}" alt="">`;
+            avatarBtn.classList.add('has-avatar');
+        } else {
+            avatarBtn.innerHTML = `<svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+            avatarBtn.classList.remove('has-avatar');
+        }
+        if (balanceEl) {
+            balanceEl.style.display = 'block';
+            balanceEl.textContent = '💰 ' + (playerStats.balance || 0);
+        }
     } else {
         document.getElementById('displayNick').textContent = 'Гость';
         document.getElementById('accountStatus').textContent = 'Войти';
         avatarBtn.innerHTML = `<svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
         avatarBtn.classList.remove('has-avatar');
+        if (balanceEl) balanceEl.style.display = 'none';
     }
 }
 
@@ -136,7 +146,7 @@ async function register() {
         const userRef = db.ref('users/' + nick.toLowerCase());
         const snapshot = await userRef.once('value');
         if (snapshot.exists()) { errorEl.textContent = 'Никнейм уже занят'; return; }
-        const freshStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
+        const freshStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [], balance: 1000, skins: { table: '#1a5c2e', ball: 'default' }, unlockedTables: ['#1a5c2e'], unlockedBalls: ['default'] };
         await userRef.set({ nickname: nick, password: simpleHash(pass), avatar: customAvatarData || '', created: Date.now(), stats: freshStats });
         playerStats = freshStats;
         currentNickname = nick; currentAvatar = customAvatarData || ''; isLoggedIn = true;
@@ -183,7 +193,7 @@ async function logout() {
     if (db && firebaseReady && currentNickname) {
         const username = currentNickname.toLowerCase();
         // Удаляем пользователя
-        await db.ref('users/' + username).remove();
+        // await db.ref('users/' + username).remove();
         // Удаляем из лидерборда если там есть
         const snapshot = await db.ref('users').once('value');
         // Пользователь уже удалён, лидерборд обновится автоматически
@@ -192,7 +202,7 @@ async function logout() {
     isLoggedIn = false;
     currentNickname = '';
     currentAvatar = '';
-    playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [] };
+    playerStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [], balance: 1000, skins: { table: '#1a5c2e', ball: 'default' }, unlockedTables: ['#1a5c2e'], unlockedBalls: ['default'] };
     localStorage.removeItem('billiardAccount');
     localStorage.removeItem('playerStats');
     updateAccountDisplay();
@@ -606,3 +616,14 @@ const TICK_RATE = 1000 / 60;
     requestAnimationFrame(gameLoop);
 })();
 
+
+function updateBalance(amount) {
+    if (!playerStats.balance) playerStats.balance = 0;
+    playerStats.balance += amount;
+    saveStats();
+    if (isLoggedIn && db && firebaseReady) {
+        db.ref('users/' + currentNickname.toLowerCase() + '/stats').set(playerStats);
+    }
+    updateAccountDisplay();
+}
+window.updateBalance = updateBalance;

@@ -55,16 +55,26 @@ function switchGame(game) {
     if (gameStarted || lobbyCode) return;
     currentGame = game;
     document.querySelectorAll('.gameBtn').forEach(b => b.classList.remove('active'));
+    document.getElementById(game + 'Btn')?.classList.add('active');
+    
     if (game === 'billiard') {
-        document.getElementById('billiardBtn').classList.add('active');
         document.getElementById('gameTitle').textContent = 'БИЛЬЯРД';
         document.getElementById('playerCount').style.display = '';
+        showMenu();
+        loadPublicServers();
+    } else if (game === 'casino') {
+        document.getElementById('gameTitle').textContent = 'КАЗИНО';
+        showCasino();
+    } else if (game === 'shop') {
+        document.getElementById('gameTitle').textContent = 'МАГАЗИН';
+        showShop();
     }
-    loadPublicServers();
 }
 function showMenu() {
     document.getElementById('menuPanel').style.display = 'flex';
     document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('casinoPanel').style.display = 'none';
+    document.getElementById('shopPanel').style.display = 'none';
     document.getElementById('gameControls').style.display = 'none';
     document.getElementById('lobbyInfo').style.display = 'none';
     document.getElementById('createSection').style.display = 'block';
@@ -703,3 +713,190 @@ showGame = function () {
     originalShowGame();
     setTimeout(initSpinControl, 100);
 };
+// ========== CASINO LOGIC ==========
+let currentBet = 10;
+let isSpinning = false;
+const symbols = ['🍒', '🍋', '🍉', '⭐', '💎', '7️⃣'];
+
+function setBet(amount) {
+    if (isSpinning) return;
+    currentBet = amount;
+    document.getElementById('currentBet').textContent = currentBet;
+}
+
+function spinSlots() {
+    if (isSpinning) return;
+    if (!isLoggedIn) {
+        document.getElementById('casinoMsg').textContent = 'Войдите в аккаунт!';
+        return;
+    }
+    if ((playerStats.balance || 0) < currentBet) {
+        document.getElementById('casinoMsg').textContent = 'Недостаточно средств!';
+        return;
+    }
+
+    isSpinning = true;
+    updateBalance(-currentBet);
+    document.getElementById('casinoMsg').textContent = 'Крутим...';
+    document.getElementById('spinBtn').disabled = true;
+
+    const s1 = document.getElementById('slot1');
+    const s2 = document.getElementById('slot2');
+    const s3 = document.getElementById('slot3');
+
+    let ticks = 0;
+    const interval = setInterval(() => {
+        s1.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        s2.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        s3.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        ticks++;
+        if (ticks > 20) {
+            clearInterval(interval);
+            finishSpin();
+        }
+    }, 50);
+}
+
+function finishSpin() {
+    const s1 = document.getElementById('slot1').textContent;
+    const s2 = document.getElementById('slot2').textContent;
+    const s3 = document.getElementById('slot3').textContent;
+
+    isSpinning = false;
+    document.getElementById('spinBtn').disabled = false;
+
+    if (s1 === s2 && s2 === s3) {
+        let multi = 10;
+        if (s1 === '7️⃣') multi = 50;
+        else if (s1 === '💎') multi = 25;
+        else if (s1 === '⭐') multi = 15;
+        
+        const win = currentBet * multi;
+        document.getElementById('casinoMsg').textContent = `ДЖЕКПОТ! Вы выиграли ${win} 💰`;
+        document.getElementById('casinoMsg').style.color = '#10b981';
+        updateBalance(win);
+    } else if (s1 === s2 || s2 === s3 || s1 === s3) {
+        const win = currentBet * 2;
+        document.getElementById('casinoMsg').textContent = `Совпадение! Вы выиграли ${win} 💰`;
+        document.getElementById('casinoMsg').style.color = '#3b82f6';
+        updateBalance(win);
+    } else {
+        document.getElementById('casinoMsg').textContent = 'Ничего. Попробуйте еще!';
+        document.getElementById('casinoMsg').style.color = '#ef4444';
+    }
+}
+
+// ========== SHOP LOGIC ==========
+const SHOP_ITEMS = {
+    tables: [
+        { id: '#1a5c2e', name: 'Классика', price: 0, color: '#1a5c2e' },
+        { id: '#1e3a8a', name: 'Синий бархат', price: 500, color: '#1e3a8a' },
+        { id: '#7f1d1d', name: 'Красный ковер', price: 1000, color: '#7f1d1d' },
+        { id: '#111111', name: 'Ночной клуб', price: 2500, color: '#111111' },
+        { id: '#4c1d95', name: 'Королевский', price: 5000, color: '#4c1d95' }
+    ],
+    balls: [
+        { id: 'default', name: 'Белый биток', price: 0, preview: '#fff' },
+        { id: 'gold', name: 'Золотой биток', price: 1500, preview: '#fbbf24' },
+        { id: 'neon', name: 'Неоновый биток', price: 3000, preview: '#22d3ee' },
+        { id: 'dark', name: 'Темная материя', price: 10000, preview: '#171717' }
+    ]
+};
+
+function renderShop() {
+    const tContainer = document.getElementById('shopTables');
+    const bContainer = document.getElementById('shopBalls');
+    tContainer.innerHTML = '';
+    bContainer.innerHTML = '';
+
+    const unlockedT = playerStats.unlockedTables || ['#1a5c2e'];
+    const unlockedB = playerStats.unlockedBalls || ['default'];
+    const eqT = playerStats.skins?.table || '#1a5c2e';
+    const eqB = playerStats.skins?.ball || 'default';
+
+    SHOP_ITEMS.tables.forEach(item => {
+        const isUnlocked = unlockedT.includes(item.id);
+        const isEquipped = eqT === item.id;
+        
+        let btnHtml = '';
+        if (isEquipped) {
+            btnHtml = `<button class="secondary" disabled style="background: #22c55e22; color: #22c55e; border-color: #22c55e;">Экипировано</button>`;
+        } else if (isUnlocked) {
+            btnHtml = `<button class="primary" onclick="equipItem('table', '${item.id}')">Экипировать</button>`;
+        } else {
+            btnHtml = `<button class="primary" onclick="buyItem('table', '${item.id}', ${item.price})">Купить за ${item.price} 💰</button>`;
+        }
+
+        tContainer.innerHTML += `
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; width: 220px; text-align: center; border: 1px solid #333;">
+                <div style="width: 100%; height: 100px; background: ${item.color}; border-radius: 4px; margin-bottom: 10px; border: 2px solid #000;"></div>
+                <h4 style="margin-bottom: 10px;">${item.name}</h4>
+                ${btnHtml}
+            </div>
+        `;
+    });
+
+    SHOP_ITEMS.balls.forEach(item => {
+        const isUnlocked = unlockedB.includes(item.id);
+        const isEquipped = eqB === item.id;
+        
+        let btnHtml = '';
+        if (isEquipped) {
+            btnHtml = `<button class="secondary" disabled style="background: #22c55e22; color: #22c55e; border-color: #22c55e;">Экипировано</button>`;
+        } else if (isUnlocked) {
+            btnHtml = `<button class="primary" onclick="equipItem('ball', '${item.id}')">Экипировать</button>`;
+        } else {
+            btnHtml = `<button class="primary" onclick="buyItem('ball', '${item.id}', ${item.price})">Купить за ${item.price} 💰</button>`;
+        }
+
+        bContainer.innerHTML += `
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; width: 220px; text-align: center; border: 1px solid #333;">
+                <div style="width: 60px; height: 60px; background: ${item.preview}; border-radius: 50%; margin: 0 auto 10px auto; border: 2px solid #000; box-shadow: inset -5px -5px 10px rgba(0,0,0,0.5);"></div>
+                <h4 style="margin-bottom: 10px;">${item.name}</h4>
+                ${btnHtml}
+            </div>
+        `;
+    });
+}
+
+function buyItem(type, id, price) {
+    if (!isLoggedIn) { alert('Войдите в аккаунт!'); return; }
+    if ((playerStats.balance || 0) < price) { alert('Недостаточно средств!'); return; }
+
+    updateBalance(-price);
+    
+    if (type === 'table') {
+        if (!playerStats.unlockedTables) playerStats.unlockedTables = ['#1a5c2e'];
+        playerStats.unlockedTables.push(id);
+    } else {
+        if (!playerStats.unlockedBalls) playerStats.unlockedBalls = ['default'];
+        playerStats.unlockedBalls.push(id);
+    }
+    
+    equipItem(type, id);
+}
+
+function equipItem(type, id) {
+    if (!playerStats.skins) playerStats.skins = { table: '#1a5c2e', ball: 'default' };
+    playerStats.skins[type] = id;
+    saveStats();
+    if (isLoggedIn && db && firebaseReady) {
+        db.ref('users/' + currentNickname.toLowerCase() + '/stats').set(playerStats);
+    }
+    renderShop();
+}
+
+function showCasino() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('shopPanel').style.display = 'none';
+    document.getElementById('casinoPanel').style.display = 'flex';
+}
+
+function showShop() {
+    document.getElementById('menuPanel').style.display = 'none';
+    document.getElementById('gameArea').style.display = 'none';
+    document.getElementById('casinoPanel').style.display = 'none';
+    document.getElementById('shopPanel').style.display = 'flex';
+    renderShop();
+}

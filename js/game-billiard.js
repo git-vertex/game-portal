@@ -946,7 +946,7 @@ function drawBilliard() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Стол
-    ctx.fillStyle = '#0d5c2e';
+    ctx.fillStyle = playerStats?.skins?.table || '#0d5c2e';
     ctx.fillRect(TABLE.x, TABLE.y, TABLE.w, TABLE.h);
     ctx.strokeStyle = '#3d2817';
     ctx.lineWidth = 14;
@@ -995,9 +995,21 @@ function drawBilliard() {
         ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
 
         if (ball.type === 'cue') {
+            const cueSkin = playerStats?.skins?.ball || 'default';
             const g = ctx.createRadialGradient(-3, -3, 0, 0, 0, BALL_R);
-            g.addColorStop(0, '#fff');
-            g.addColorStop(1, '#ddd');
+            if (cueSkin === 'gold') {
+                g.addColorStop(0, '#fef08a');
+                g.addColorStop(1, '#d97706');
+            } else if (cueSkin === 'neon') {
+                g.addColorStop(0, '#a5f3fc');
+                g.addColorStop(1, '#0891b2');
+            } else if (cueSkin === 'dark') {
+                g.addColorStop(0, '#404040');
+                g.addColorStop(1, '#000000');
+            } else {
+                g.addColorStop(0, '#fff');
+                g.addColorStop(1, '#ddd');
+            }
             ctx.fillStyle = g;
             ctx.fill();
 

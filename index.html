@@ -45,6 +45,25 @@
                 </span>
                 <span class="label">Бильярд</span>
             </button>
+            <button class="gameBtn" id="casinoBtn" onclick="switchGame('casino')">
+                <span class="icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 8v8M8 12h8"></path>
+                    </svg>
+                </span>
+                <span class="label">Казино</span>
+            </button>
+            <button class="gameBtn" id="shopBtn" onclick="switchGame('shop')">
+                <span class="icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                </span>
+                <span class="label">Магазин</span>
+            </button>
         </div>
 
         <div class="panel-spacer"></div>
@@ -60,6 +79,7 @@
                 <div id="accountInfo">
                     <div id="displayNick">Гость</div>
                     <div id="accountStatus">Войти</div>
+                    <div id="displayBalance" style="display:none; color: #f59e0b; font-size: 13px; margin-top: 2px;">💰 1000</div>
                 </div>
             </div>
             <button id="statsBtn" class="sm" onclick="openStatsModal()">
@@ -273,6 +293,47 @@
             <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
     </button>
+
+
+    <!-- ========== CASINO PANEL ========== -->
+    <div id="casinoPanel" class="menu-panel" style="display: none; align-items: center; justify-content: center; flex-direction: column; width: 100%; min-height: 100%;">
+        <div class="menu-box" style="text-align: center; max-width: 500px; width: 100%;">
+            <h2 style="margin-bottom: 20px;">Игровые автоматы</h2>
+            <div id="slotMachine" style="display: flex; justify-content: center; gap: 20px; font-size: 64px; margin-bottom: 30px; background: #111; padding: 20px; border-radius: 12px; border: 2px solid #333;">
+                <div id="slot1">🍒</div>
+                <div id="slot2">🍋</div>
+                <div id="slot3">🍉</div>
+            </div>
+            <div id="casinoMsg" style="height: 24px; color: #f59e0b; margin-bottom: 20px; font-weight: 600;">Сделайте ставку</div>
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
+                <button class="secondary" onclick="setBet(10)">10</button>
+                <button class="secondary" onclick="setBet(50)">50</button>
+                <button class="secondary" onclick="setBet(100)">100</button>
+                <button class="secondary" onclick="setBet(500)">500</button>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                <span style="font-size: 18px; font-weight: 600;">Ставка: <span id="currentBet">10</span> 💰</span>
+                <button class="primary" id="spinBtn" onclick="spinSlots()" style="padding: 10px 30px; font-size: 18px;">КРУТИТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SHOP PANEL ========== -->
+    <div id="shopPanel" class="menu-panel" style="display: none; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 20px; width: 100%; min-height: 100%;">
+        <div class="menu-box" style="max-width: 800px; width: 100%;">
+            <h2 style="margin-bottom: 20px; text-align: center;">Магазин</h2>
+            
+            <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Цвет сукна</h3>
+            <div id="shopTables" style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+                <!-- Tables rendered by JS -->
+            </div>
+
+            <h3 style="margin-top: 40px; border-bottom: 1px solid #333; padding-bottom: 10px;">Скины на биток</h3>
+            <div id="shopBalls" style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+                <!-- Balls rendered by JS -->
+            </div>
+        </div>
+    </div>
 
     <!-- ========== CHAT PANEL ========== -->
     <div id="chatPanel">
