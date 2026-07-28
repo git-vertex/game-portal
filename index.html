@@ -96,7 +96,7 @@
                 <div id="accountInfo">
                     <div id="displayNick">Гость</div>
                     <div id="accountStatus">Войти</div>
-                    <div id="displayBalance" style="display:none; color: #f59e0b; font-size: 13px; margin-top: 2px;">💰 1000</div>
+                    <div id="displayBalance" style="display:none; color: #f59e0b; font-size: 13px; margin-top: 2px;"><i class="coin-icon"></i> 1000</div>
                 </div>
             </div>
             <button id="statsBtn" class="sm" onclick="openStatsModal()">
@@ -321,7 +321,7 @@
                 <button class="secondary" onclick="setBet(500)">500</button>
             </div>
             <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
-                <span style="font-size: 18px; font-weight: 600;">Ставка: <span id="currentBet">10</span> 💰</span>
+                <span style="font-size: 18px; font-weight: 600;">Ставка: <span id="currentBet">10</span> <i class="coin-icon"></i></span>
                 <button class="primary" id="spinBtn" onclick="spinSlots()" style="padding: 10px 30px; font-size: 18px;">КРУТИТЬ</button>
             </div>
         </div>
@@ -348,7 +348,7 @@
             <h2 style="margin-bottom: 20px;">Пополнение баланса</h2>
             <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
                 <div class="bank-item" style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #333; width: 160px;">
-                    <div style="font-size: 32px; margin-bottom: 10px;">💰</div>
+                    <div style="font-size: 32px; margin-bottom: 10px;"><i class="coin-icon"></i></div>
                     <div style="color: #f59e0b; font-size: 20px; font-weight: bold; margin-bottom: 5px;">10 000</div>
                     <div style="color: #888; margin-bottom: 15px;">Монет</div>
                     <button class="primary" onclick="buyCoins(10000, 99)">99 ₽</button>
@@ -375,12 +375,15 @@
         <div class="menu-box" style="text-align: center; max-width: 400px; width: 100%; border: 2px solid #ef4444;">
             <h2 style="color: #ef4444; margin-bottom: 20px;">Панель Владельца</h2>
             <div style="margin-bottom: 15px;">
-                <input type="text" id="adminTarget" value="вцфвфв" placeholder="Никнейм игрока" class="auth-input" style="text-align: center;">
+                <input type="text" id="adminTarget" value="@вцфвфв" placeholder="@username игрока" class="auth-input" style="text-align: center;">
             </div>
             <div style="margin-bottom: 20px;">
-                <input type="number" id="adminAmount" value="1000000" placeholder="Сколько выдать" class="auth-input" style="text-align: center;">
+                <input type="number" id="adminAmount" value="10000" placeholder="Сумма" class="auth-input" style="text-align: center;">
             </div>
-            <button class="primary" onclick="giveAdminBalance()" style="background: #ef4444; width: 100%;">НАКРУТИТЬ БАЛАНС</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button class="primary" onclick="changeAdminBalance(true)" style="background: #10b981; flex: 1;">ВЫДАТЬ</button>
+                <button class="primary" onclick="changeAdminBalance(false)" style="background: #ef4444; flex: 1;">СНЯТЬ</button>
+            </div>
             <div id="adminMsg" style="margin-top: 15px; color: #10b981; font-weight: bold;"></div>
         </div>
     </div>

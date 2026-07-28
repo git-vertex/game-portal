@@ -998,17 +998,25 @@ function drawBilliard() {
             const cueSkin = playerStats?.skins?.ball || 'default';
             const g = ctx.createRadialGradient(-3, -3, 0, 0, 0, BALL_R);
             if (cueSkin === 'gold') {
-                g.addColorStop(0, '#fef08a');
-                g.addColorStop(1, '#d97706');
+                g.addColorStop(0, '#fef08a'); g.addColorStop(1, '#d97706');
+            } else if (cueSkin === 'silver') {
+                g.addColorStop(0, '#f8fafc'); g.addColorStop(1, '#94a3b8');
             } else if (cueSkin === 'neon') {
-                g.addColorStop(0, '#a5f3fc');
-                g.addColorStop(1, '#0891b2');
+                g.addColorStop(0, '#a5f3fc'); g.addColorStop(1, '#0891b2');
+            } else if (cueSkin === 'emerald') {
+                g.addColorStop(0, '#6ee7b7'); g.addColorStop(1, '#047857');
+            } else if (cueSkin === 'ruby') {
+                g.addColorStop(0, '#fca5a5'); g.addColorStop(1, '#b91c1c');
             } else if (cueSkin === 'dark') {
-                g.addColorStop(0, '#404040');
-                g.addColorStop(1, '#000000');
+                g.addColorStop(0, '#404040'); g.addColorStop(1, '#000000');
+            } else if (cueSkin === 'plasma') {
+                g.addColorStop(0, '#f0abfc'); g.addColorStop(1, '#86198f');
+            } else if (cueSkin === 'diamond') {
+                g.addColorStop(0, '#c7d2fe'); g.addColorStop(1, '#3730a3');
+            } else if (cueSkin === 'galaxy') {
+                g.addColorStop(0, '#a78bfa'); g.addColorStop(1, '#312e81');
             } else {
-                g.addColorStop(0, '#fff');
-                g.addColorStop(1, '#ddd');
+                g.addColorStop(0, '#fff'); g.addColorStop(1, '#ddd');
             }
             ctx.fillStyle = g;
             ctx.fill();

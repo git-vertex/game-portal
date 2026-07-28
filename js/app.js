@@ -76,7 +76,7 @@ function updateAccountDisplay() {
     }
     const balanceEl = document.getElementById('displayBalance');
     const adminBtn = document.getElementById('adminBtn');
-    if (adminBtn) adminBtn.style.display = (isLoggedIn && currentNickname.toLowerCase() === 'вцфвфв') ? 'flex' : 'none';
+    if (adminBtn) adminBtn.style.display = (isLoggedIn && currentNickname.replace('@','').toLowerCase() === 'вцфвфв') ? 'flex' : 'none';
     
     if (isLoggedIn) {
         document.getElementById('displayNick').textContent = currentNickname;
@@ -90,7 +90,7 @@ function updateAccountDisplay() {
         }
         if (balanceEl) {
             balanceEl.style.display = 'block';
-            balanceEl.textContent = '💰 ' + (playerStats.balance || 0);
+            balanceEl.innerHTML = '<i class="coin-icon"></i> ' + (playerStats.balance || 0);
         }
     } else {
         document.getElementById('displayNick').textContent = 'Гость';
@@ -138,29 +138,41 @@ function closeAuthModal() { document.getElementById('authModal').classList.remov
 
 async function register() {
     if (!db || !firebaseReady) { document.getElementById('regError').textContent = 'Нет подключения к серверу'; return; }
-    const nick = document.getElementById('regNick').value.trim();
+    let nick = document.getElementById('regNick').value.trim();
+    if (nick.startsWith('@')) nick = nick.substring(1);
+    
     const pass = document.getElementById('regPassword').value;
     const passRepeat = document.getElementById('regPasswordRepeat').value;
     const errorEl = document.getElementById('regError');
-    if (!nick || nick.length < 2) { errorEl.textContent = 'Никнейм минимум 2 символа'; return; }
+    
+    const usernameRegex = /^[A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё0-9_]{3,20}$/;
+    if (!usernameRegex.test(nick)) {
+        errorEl.textContent = 'Никнейм от 4 симв, только буквы/цифры/_, начинается с буквы';
+        return;
+    }
     if (!pass || pass.length < 4) { errorEl.textContent = 'Пароль минимум 4 символа'; return; }
     if (pass !== passRepeat) { errorEl.textContent = 'Пароли не совпадают'; return; }
+    
+    const finalNick = '@' + nick;
+    
     try {
         const userRef = db.ref('users/' + nick.toLowerCase());
         const snapshot = await userRef.once('value');
         if (snapshot.exists()) { errorEl.textContent = 'Никнейм уже занят'; return; }
         const freshStats = { billiard: { games: 0, wins: 0, frp: 0 }, history: [], balance: 1000, skins: { table: '#1a5c2e', ball: 'default' }, unlockedTables: ['#1a5c2e'], unlockedBalls: ['default'] };
-        await userRef.set({ nickname: nick, password: simpleHash(pass), avatar: customAvatarData || '', created: Date.now(), stats: freshStats });
+        await userRef.set({ nickname: finalNick, password: simpleHash(pass), avatar: customAvatarData || '', created: Date.now(), stats: freshStats });
         playerStats = freshStats;
-        currentNickname = nick; currentAvatar = customAvatarData || ''; isLoggedIn = true;
-        localStorage.setItem('billiardAccount', JSON.stringify({ nickname: nick, avatar: currentAvatar }));
+        currentNickname = finalNick; currentAvatar = customAvatarData || ''; isLoggedIn = true;
+        localStorage.setItem('billiardAccount', JSON.stringify({ nickname: finalNick, avatar: currentAvatar }));
         updateAccountDisplay(); closeAuthModal();
     } catch (e) { errorEl.textContent = 'Ошибка регистрации'; }
 }
 
 async function login() {
     if (!db || !firebaseReady) { document.getElementById('loginError').textContent = 'Нет подключения к серверу'; return; }
-    const nick = document.getElementById('loginNick').value.trim();
+    let nick = document.getElementById('loginNick').value.trim();
+    if (nick.startsWith('@')) nick = nick.substring(1);
+    
     const pass = document.getElementById('loginPassword').value;
     const errorEl = document.getElementById('loginError');
     if (!nick || !pass) { errorEl.textContent = 'Заполните все поля'; return; }
@@ -170,9 +182,13 @@ async function login() {
         if (!snapshot.exists()) { errorEl.textContent = 'Пользователь не найден'; return; }
         const data = snapshot.val();
         if (data.password !== simpleHash(pass)) { errorEl.textContent = 'Неверный пароль'; return; }
-        currentNickname = data.nickname; currentAvatar = data.avatar || ''; isLoggedIn = true;
+        
+        let finalNick = data.nickname;
+        if (!finalNick.startsWith('@')) finalNick = '@' + finalNick;
+        
+        currentNickname = finalNick; currentAvatar = data.avatar || ''; isLoggedIn = true;
         if (data.stats) { playerStats = data.stats; saveStats(); }
-        localStorage.setItem('billiardAccount', JSON.stringify({ nickname: data.nickname, avatar: currentAvatar }));
+        localStorage.setItem('billiardAccount', JSON.stringify({ nickname: finalNick, avatar: currentAvatar }));
         updateAccountDisplay(); closeAuthModal();
     } catch (e) { errorEl.textContent = 'Ошибка входа'; }
 }
@@ -631,34 +647,50 @@ function updateBalance(amount) {
 }
 window.updateBalance = updateBalance;
 
-async function giveAdminBalance() {
-    if (currentNickname.toLowerCase() !== 'вцфвфв') return;
-    const target = document.getElementById('adminTarget').value.trim().toLowerCase();
+async function changeAdminBalance(isAdding) {
+    if (currentNickname.replace('@','').toLowerCase() !== 'вцфвфв') return;
+    let target = document.getElementById('adminTarget').value.trim().toLowerCase();
+    if (target.startsWith('@')) target = target.substring(1);
     const amount = parseInt(document.getElementById('adminAmount').value);
     const msgEl = document.getElementById('adminMsg');
     
-    if (!target || !amount) { msgEl.textContent = 'Ошибка ввода'; return; }
+    if (!target || !amount || amount <= 0) { 
+        msgEl.textContent = 'Ошибка ввода'; 
+        msgEl.style.color = '#ef4444';
+        return; 
+    }
     
     try {
         const ref = db.ref('users/' + target + '/stats');
         const snap = await ref.once('value');
-        if (!snap.exists()) { msgEl.textContent = 'Игрок не найден'; return; }
+        if (!snap.exists()) { 
+            msgEl.textContent = 'Игрок не найден'; 
+            msgEl.style.color = '#ef4444';
+            return; 
+        }
         
         const st = snap.val();
         if (!st.balance) st.balance = 0;
-        st.balance += amount;
+        
+        if (isAdding) {
+            st.balance += amount;
+        } else {
+            st.balance = Math.max(0, st.balance - amount);
+        }
         
         await ref.set(st);
         
-        if (target === currentNickname.toLowerCase()) {
+        if (target === currentNickname.replace('@','').toLowerCase()) {
             playerStats.balance = st.balance;
             updateAccountDisplay();
         }
         
-        msgEl.textContent = `Успешно выдано ${amount} игроку ${target}`;
+        msgEl.textContent = `Успешно ${isAdding ? 'выдано' : 'снято'} ${amount} монет у @${target}`;
+        msgEl.style.color = '#10b981';
         setTimeout(() => msgEl.textContent = '', 3000);
     } catch (e) {
         msgEl.textContent = 'Ошибка БД';
+        msgEl.style.color = '#ef4444';
     }
 }
-window.giveAdminBalance = giveAdminBalance;
+window.changeAdminBalance = changeAdminBalance;

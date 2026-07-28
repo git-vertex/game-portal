@@ -3016,3 +3016,14 @@ button:active:not(:disabled) {
 }
 .slot-reel { width: 60px; height: 60px; background: #222; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); overflow: hidden; }
 .bank-item button { width: 100%; margin-top: auto; }
+
+.coin-icon {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: text-bottom;
+    background-color: currentColor;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h-2v-2h2v-2h-2V9h2V7h2v2h2v2h-2v2h2v2h-2v2z"/></svg>') no-repeat center / contain;
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h-2v-2h2v-2h-2V9h2V7h2v2h2v2h-2v2h2v2h-2v2z"/></svg>') no-repeat center / contain;
+}
+.slot-reel { font-size: 42px; user-select: none; }

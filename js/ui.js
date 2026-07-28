@@ -853,17 +853,17 @@ function finishSpin() {
         if (maxSym === 'seven') multi = 500;
         if (maxSym === 'diamond') multi = 250;
         win = currentBet * multi;
-        msg = `МЕГА ДЖЕКПОТ! 5x совпадение = ${win} 💰`;
+        msg = `МЕГА ДЖЕКПОТ! 5x совпадение = ${win} <i class="coin-icon"></i>`;
         color = '#10b981';
     } else if (maxCount === 4) {
         let multi = 10;
         if (maxSym === 'seven') multi = 50;
         win = currentBet * multi;
-        msg = `ОТЛИЧНО! 4x совпадение = ${win} 💰`;
+        msg = `ОТЛИЧНО! 4x совпадение = ${win} <i class="coin-icon"></i>`;
         color = '#3b82f6';
     } else if (maxCount === 3) {
         win = currentBet * 2;
-        msg = `Совпадение! 3x совпадение = ${win} 💰`;
+        msg = `Совпадение! 3x совпадение = ${win} <i class="coin-icon"></i>`;
         color = '#f59e0b';
     } else {
         msg = 'Мимо. Попробуйте еще!';
@@ -890,7 +890,7 @@ function buyCoins(amount, price) {
         status.textContent = 'Обработка транзакции...';
         setTimeout(() => {
             spinner.style.display = 'none';
-            status.textContent = `Успешно! Начислено ${amount} 💰`;
+            status.textContent = `Успешно! Начислено ${amount} <i class="coin-icon"></i>`;
             status.style.color = '#10b981';
             updateBalance(amount);
             
@@ -908,13 +908,25 @@ const SHOP_ITEMS = {
         { id: '#1e3a8a', name: 'Синий бархат', price: 500, color: '#1e3a8a' },
         { id: '#7f1d1d', name: 'Красный ковер', price: 1000, color: '#7f1d1d' },
         { id: '#111111', name: 'Ночной клуб', price: 2500, color: '#111111' },
-        { id: '#4c1d95', name: 'Королевский', price: 5000, color: '#4c1d95' }
+        { id: '#4c1d95', name: 'Королевский', price: 5000, color: '#4c1d95' },
+        { id: '#064e3b', name: 'Изумрудный', price: 7500, color: '#064e3b' },
+        { id: '#831843', name: 'Малиновый', price: 10000, color: '#831843' },
+        { id: '#172554', name: 'Океан', price: 15000, color: '#172554' },
+        { id: '#450a0a', name: 'Магма', price: 25000, color: '#450a0a' },
+        { id: '#ffffff', name: 'Белоснежный', price: 50000, color: '#ffffff' },
+        { id: '#f59e0b', name: 'Золотой песок', price: 100000, color: '#f59e0b' }
     ],
     balls: [
         { id: 'default', name: 'Белый биток', price: 0, preview: '#fff' },
+        { id: 'silver', name: 'Серебряный', price: 500, preview: '#cbd5e1' },
         { id: 'gold', name: 'Золотой биток', price: 1500, preview: '#fbbf24' },
         { id: 'neon', name: 'Неоновый биток', price: 3000, preview: '#22d3ee' },
-        { id: 'dark', name: 'Темная материя', price: 10000, preview: '#171717' }
+        { id: 'emerald', name: 'Изумруд', price: 5000, preview: '#10b981' },
+        { id: 'ruby', name: 'Рубин', price: 7500, preview: '#ef4444' },
+        { id: 'dark', name: 'Темная материя', price: 10000, preview: '#171717' },
+        { id: 'plasma', name: 'Плазма', price: 25000, preview: '#d946ef' },
+        { id: 'diamond', name: 'Бриллиант', price: 50000, preview: '#818cf8' },
+        { id: 'galaxy', name: 'Галактика', price: 100000, preview: '#a78bfa' }
     ]
 };
 
@@ -939,7 +951,7 @@ function renderShop() {
         } else if (isUnlocked) {
             btnHtml = `<button class="primary" onclick="equipItem('table', '${item.id}')">Экипировать</button>`;
         } else {
-            btnHtml = `<button class="primary" onclick="buyItem('table', '${item.id}', ${item.price})">Купить за ${item.price} 💰</button>`;
+            btnHtml = `<button class="primary" onclick="buyItem('table', '${item.id}', ${item.price})">Купить за ${item.price} <i class="coin-icon"></i></button>`;
         }
 
         tContainer.innerHTML += `
@@ -961,7 +973,7 @@ function renderShop() {
         } else if (isUnlocked) {
             btnHtml = `<button class="primary" onclick="equipItem('ball', '${item.id}')">Экипировать</button>`;
         } else {
-            btnHtml = `<button class="primary" onclick="buyItem('ball', '${item.id}', ${item.price})">Купить за ${item.price} 💰</button>`;
+            btnHtml = `<button class="primary" onclick="buyItem('ball', '${item.id}', ${item.price})">Купить за ${item.price} <i class="coin-icon"></i></button>`;
         }
 
         bContainer.innerHTML += `
