@@ -40,7 +40,8 @@ function initBalls() {
     cueSpin = { x: 0, y: 0 };
     updateSpinDisplay();
 
-    for (let i = 1; i <= 6; i++) gameState.playerPocketed[i] = [];
+    const maxP = gameState.totalPlayers || 9;
+    for (let i = 1; i <= maxP; i++) gameState.playerPocketed[i] = [];
 
     // Cue ball with spin properties
     gameState.balls.push({
@@ -99,6 +100,40 @@ function initBalls() {
             idx++;
         }
     }
+
+    // ===== ПРЕДВАРИТЕЛЬНОЕ РАСПРЕДЕЛЕНИЕ ШАРИКОВ (сразу при старте) =====
+    assignPlayerBallGroups();
+}
+
+// ===== НОВАЯ ФУНКЦИЯ: РАСПРЕДЕЛЕНИЕ ШАРИКОВ =====
+function assignPlayerBallGroups() {
+    const total = gameState.totalPlayers || 2;
+    const solids = [1,2,3,4,5,6,7];
+    const stripes = [9,10,11,12,13,14,15];
+
+    // Если 2 игрока — классика
+    if (total === 2) {
+        gameState.playerTypes[1] = 'solid';
+        gameState.playerTypes[2] = 'stripe';
+        return;
+    }
+
+    // Для 3-9 игроков: равномерное распределение
+    // Каждый игрок получает 1-2 шарика из solid и stripe
+    const perPlayer = Math.floor(14 / total); // 14 цветных шаров
+    let sIdx = 0, stIdx = 0;
+
+    for (let p = 1; p <= total; p++) {
+        // Чередуем solid/stripe
+        if (p % 2 === 1) {
+            gameState.playerTypes[p] = 'solid';
+        } else {
+            gameState.playerTypes[p] = 'stripe';
+        }
+    }
+
+    // Если игроков больше 7 — некоторые будут без типа до первого забитого шара
+    // Это позволяет динамически определять тип по первому забитому шару
 }
 
 function ensureGameStateArrays() {
@@ -107,7 +142,8 @@ function ensureGameStateArrays() {
     if (!gameState.playerNicks) gameState.playerNicks = {};
     if (!gameState.playerAvatars) gameState.playerAvatars = {};
     if (!gameState.balls) gameState.balls = [];
-    for (let i = 1; i <= 6; i++) {
+    const maxP = gameState.totalPlayers || 9;
+    for (let i = 1; i <= maxP; i++) {
         if (!gameState.playerPocketed[i]) gameState.playerPocketed[i] = [];
     }
 }
@@ -416,24 +452,33 @@ function handlePocketed(ball) {
         }
     } else {
         const cp = gameState.currentPlayer;
+        const totalPlayers = gameState.totalPlayers || 2;
 
+        // Если у игрока ещё нет типа — назначаем по первому забитому шару
         if (!gameState.playerTypes[cp] && ball.type !== 'eight') {
             gameState.playerTypes[cp] = ball.type;
+            gameState.turnPocketedOwn = true;
+            gameState.playerPocketed[cp].push(ball.number);
+            updateScorePanel();
+            return;
         }
 
-        if (ball.type === gameState.playerTypes[cp]) {
+        // Если тип уже назначен
+        if (gameState.playerTypes[cp] && ball.type === gameState.playerTypes[cp]) {
             gameState.turnPocketedOwn = true;
             gameState.playerPocketed[cp].push(ball.number);
         } else {
+            // Шар не свой — ищем владельца типа
             let target = null;
-            for (let p = 1; p <= gameState.totalPlayers; p++) {
+            for (let p = 1; p <= totalPlayers; p++) {
                 if (gameState.playerTypes[p] === ball.type) {
                     target = p;
                     break;
                 }
             }
+            // Если не нашли — отдаём первому свободному игроку
             if (!target) {
-                for (let p = 1; p <= gameState.totalPlayers; p++) {
+                for (let p = 1; p <= totalPlayers; p++) {
                     if (!gameState.playerTypes[p] && p !== cp) {
                         gameState.playerTypes[p] = ball.type;
                         target = p;
@@ -459,7 +504,8 @@ function endTurn() {
     document.getElementById('foulMessage').textContent = gameState.foul ? 'ФОЛ' : '';
 
     if (gameState.foul || !gameState.turnPocketedOwn) {
-        gameState.currentPlayer = gameState.currentPlayer % gameState.totalPlayers + 1;
+        const total = gameState.totalPlayers || 2;
+        gameState.currentPlayer = gameState.currentPlayer % total + 1;
     }
 
     gameState.foul = false;
